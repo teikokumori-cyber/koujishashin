@@ -9,7 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
   :root {
     --green-dark: #1a5c2a;
     --green-mid: #155022;
@@ -20,220 +19,120 @@
     --border: #d0cfc8;
     --radius: 12px;
   }
+  html, body { height: 100%; background: var(--bg); font-family: 'Noto Sans JP', sans-serif; color: var(--text); }
 
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    font-family: 'Noto Sans JP', sans-serif;
-    color: var(--text);
-  }
-
-  #app {
-    max-width: 520px;
-    margin: 0 auto;
-    padding: 16px 16px 40px;
-    min-height: 100%;
-  }
+  #app { max-width: 520px; margin: 0 auto; padding: 16px 16px 40px; min-height: 100%; }
 
   h1 {
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: var(--green-dark);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 17px; font-weight: 700; letter-spacing: 0.04em;
+    color: var(--green-dark); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
   }
   h1::before {
-    content: '';
-    display: inline-block;
-    width: 4px; height: 20px;
-    background: var(--green-dark);
-    border-radius: 2px;
+    content: ''; display: inline-block; width: 4px; height: 20px;
+    background: var(--green-dark); border-radius: 2px;
   }
 
-  /* Viewfinder */
+  /* Camera area */
+  #camera-area { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+
   #viewfinder-container {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4/3;
-    background: #0d1a10;
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-    margin-bottom: 16px;
+    position: relative; width: 100%; aspect-ratio: 4/3;
+    background: #0d1a10; border-radius: var(--radius);
+    overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.18);
   }
-
-  #video, #canvas-preview {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-  }
+  #video, #canvas-preview { width: 100%; height: 100%; object-fit: cover; display: block; }
   #canvas-preview { display: none; }
 
   /* Sign overlay */
   .sign-overlay {
-    position: absolute;
-    bottom: 10px; right: 10px;
-    width: 42%;
-    background: var(--green-dark);
-    border: 2px solid #fff;
-    border-radius: 2px;
-    padding: 3px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    position: absolute; bottom: 10px; right: 10px; width: 42%;
+    background: var(--green-dark); border: 2px solid #fff;
+    border-radius: 2px; padding: 3px; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
-  .sign-overlay table {
-    width: 100%;
-    border-collapse: collapse;
-    color: #fff;
-  }
+  .sign-overlay table { width: 100%; border-collapse: collapse; color: #fff; }
   .sign-overlay .top-rows td {
-    border: 1px solid #fff;
-    padding: 2px 4px;
-    font-size: clamp(7px, 2vw, 11px);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    height: clamp(16px, 4vw, 24px);
-    font-family: 'Noto Sans JP', sans-serif;
+    border: 1px solid #fff; padding: 2px 4px;
+    font-size: clamp(7px, 2vw, 11px); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+    height: clamp(16px, 4vw, 24px); font-family: 'Noto Sans JP', sans-serif;
   }
-  .sign-overlay .top-rows td:first-child {
-    width: 36%;
-    background: rgba(0,0,0,0.28);
-    font-weight: 500;
-  }
-  .sign-overlay .blank-area {
-    border: 1px solid #fff;
-    border-top: none;
-    height: clamp(30px, 8vw, 52px);
-    background: var(--green-dark);
-  }
+  .sign-overlay .top-rows td:first-child { width: 36%; background: rgba(0,0,0,0.28); font-weight: 500; }
+  .sign-overlay .blank-area { border: 1px solid #fff; border-top: none; height: clamp(30px, 8vw, 52px); background: var(--green-dark); }
 
-  /* No camera message */
+  /* No camera */
   #no-camera-msg {
-    display: none;
-    position: absolute; inset: 0;
+    display: none; position: absolute; inset: 0;
     align-items: center; justify-content: center;
-    color: #7a9e82;
-    font-size: 14px;
-    text-align: center;
-    padding: 1rem;
-    flex-direction: column;
-    gap: 10px;
+    color: #7a9e82; font-size: 14px; text-align: center;
+    padding: 1rem; flex-direction: column; gap: 10px;
   }
   #no-camera-msg .icon { font-size: 40px; }
 
+  /* Side controls (landscape) */
+  #side-controls {
+    display: none;
+    flex-direction: column; justify-content: center;
+    align-items: center; gap: 12px; width: 76px; flex-shrink: 0;
+  }
+  #side-controls .btn {
+    width: 64px; height: 64px; border-radius: 50%;
+    flex-direction: column; gap: 2px; padding: 4px;
+    font-size: 11px;
+  }
+  #side-controls .btn-primary { font-size: 24px; }
+  #side-controls .shoot-label { font-size: 10px; margin-top: 2px; }
+
   /* Form card */
-  .form-card {
-    background: var(--card);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 14px;
-    border: 1px solid var(--border);
-  }
-
-  .field-row {
-    display: grid;
-    grid-template-columns: 72px 1fr;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
+  .form-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; border: 1px solid var(--border); }
+  .field-row { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 10px; margin-bottom: 10px; }
   .field-row:last-child { margin-bottom: 0; }
-
-  .field-row label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-sub);
-  }
-
+  .field-row label { font-size: 13px; font-weight: 500; color: var(--text-sub); }
   .field-row input {
-    font-size: 15px;
-    font-family: 'Noto Sans JP', sans-serif;
-    padding: 8px 10px;
-    height: 40px;
-    border-radius: 8px;
-    border: 1.5px solid var(--border);
-    background: var(--bg);
-    color: var(--text);
-    width: 100%;
-    outline: none;
-    transition: border-color 0.15s;
+    font-size: 15px; font-family: 'Noto Sans JP', sans-serif;
+    padding: 8px 10px; height: 40px; border-radius: 8px;
+    border: 1.5px solid var(--border); background: var(--bg);
+    color: var(--text); width: 100%; outline: none; transition: border-color 0.15s;
   }
-  .field-row input:focus {
-    border-color: var(--green-dark);
-    background: #fff;
-  }
+  .field-row input:focus { border-color: var(--green-dark); background: #fff; }
 
   /* Buttons */
-  .btn-row {
-    display: flex;
-    gap: 10px;
-  }
-
+  .btn-row { display: flex; gap: 10px; }
   .btn {
-    flex: 1;
-    height: 52px;
-    border-radius: var(--radius);
-    border: 1.5px solid var(--border);
-    background: var(--card);
-    color: var(--text);
-    font-size: 15px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s, transform 0.1s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    flex: 1; height: 52px; border-radius: var(--radius);
+    border: 1.5px solid var(--border); background: var(--card);
+    color: var(--text); font-size: 15px; font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 500; cursor: pointer; transition: background 0.15s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
   }
   .btn:active { transform: scale(0.97); }
   .btn:hover { background: #eee; }
-
-  .btn-primary {
-    background: var(--green-dark);
-    color: #fff;
-    border-color: var(--green-dark);
-    font-size: 17px;
-    letter-spacing: 0.02em;
-  }
+  .btn-primary { background: var(--green-dark); color: #fff; border-color: var(--green-dark); font-size: 17px; letter-spacing: 0.02em; }
   .btn-primary:hover { background: var(--green-mid); }
-
-  .btn-save {
-    background: #1e4d8c;
-    color: #fff;
-    border-color: #1e4d8c;
-  }
+  .btn-save { background: #1e4d8c; color: #fff; border-color: #1e4d8c; }
   .btn-save:hover { background: #183e72; }
 
-  #msg {
-    font-size: 13px;
-    color: var(--text-sub);
-    margin-top: 10px;
-    text-align: center;
-    min-height: 18px;
-  }
+  #msg { font-size: 13px; color: var(--text-sub); margin-top: 10px; text-align: center; min-height: 18px; }
 
   /* Result */
-  #result-area {
-    display: none;
-    margin-bottom: 14px;
-  }
-  #result-area img {
-    width: 100%;
-    border-radius: var(--radius);
-    display: block;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-  }
+  #result-area { display: none; margin-bottom: 14px; }
+  #result-area img { width: 100%; border-radius: var(--radius); display: block; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
 
-  /* Footer */
-  .footer {
-    text-align: center;
-    font-size: 11px;
-    color: #b0afa8;
-    margin-top: 20px;
+  .footer { text-align: center; font-size: 11px; color: #b0afa8; margin-top: 20px; }
+
+  /* 横向き */
+  @media (orientation: landscape) {
+    #app { max-width: 100%; padding: 6px 10px 12px; }
+    h1 { font-size: 13px; margin-bottom: 6px; }
+    #camera-area { flex-direction: row; align-items: stretch; margin-bottom: 8px; }
+    #viewfinder-container { flex: 1; aspect-ratio: auto; min-height: 150px; }
+    #side-controls { display: flex; }
+    .btn-row { display: none !important; }
+    .form-card { padding: 8px 10px; margin-bottom: 6px; }
+    .field-row { margin-bottom: 5px; gap: 6px; grid-template-columns: 56px 1fr; }
+    .field-row input { height: 32px; font-size: 13px; }
+    .field-row label { font-size: 11px; }
+    #msg { font-size: 12px; margin-top: 6px; }
   }
 </style>
 </head>
@@ -241,22 +140,31 @@
 <div id="app">
   <h1>工事写真撮影</h1>
 
-  <div id="viewfinder-container">
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="canvas-preview"></canvas>
-    <div id="no-camera-msg">
-      <div class="icon">📷</div>
-      <div>カメラへのアクセスを許可してください<br><small>ブラウザの設定からカメラを許可してください</small></div>
+  <div id="camera-area">
+    <div id="viewfinder-container">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="canvas-preview"></canvas>
+      <div id="no-camera-msg">
+        <div class="icon">📷</div>
+        <div>カメラへのアクセスを許可してください<br><small>ブラウザの設定からカメラを許可してください</small></div>
+      </div>
+      <div class="sign-overlay" id="sign-overlay">
+        <table>
+          <tbody class="top-rows">
+            <tr><td>工事名</td><td id="s-name">　</td></tr>
+            <tr><td>場　所</td><td id="s-place">　</td></tr>
+            <tr><td>日　付</td><td id="s-date">　</td></tr>
+          </tbody>
+        </table>
+        <div class="blank-area"></div>
+      </div>
     </div>
-    <div class="sign-overlay" id="sign-overlay">
-      <table>
-        <tbody class="top-rows">
-          <tr><td>工事名</td><td id="s-name">　</td></tr>
-          <tr><td>場　所</td><td id="s-place">　</td></tr>
-          <tr><td>日　付</td><td id="s-date">　</td></tr>
-        </tbody>
-      </table>
-      <div class="blank-area"></div>
+
+    <!-- 横向き時の右サイドボタン -->
+    <div id="side-controls">
+      <button class="btn btn-primary" id="btn-shoot-side">📷<span class="shoot-label">撮影</span></button>
+      <button class="btn" id="btn-retake-side" style="display:none">↩<span class="shoot-label">撮り直し</span></button>
+      <button class="btn btn-save" id="btn-download-side" style="display:none">💾<span class="shoot-label">保存</span></button>
     </div>
   </div>
 
@@ -279,6 +187,7 @@
     </div>
   </div>
 
+  <!-- 縦向き時のボタン -->
   <div class="btn-row">
     <button class="btn btn-primary" id="btn-shoot">📷 撮影</button>
     <button class="btn" id="btn-retake" style="display:none">↩ 撮り直し</button>
@@ -294,9 +203,6 @@ const video = document.getElementById('video');
 const canvasPreview = document.getElementById('canvas-preview');
 const signOverlay = document.getElementById('sign-overlay');
 const noCamMsg = document.getElementById('no-camera-msg');
-const btnShoot = document.getElementById('btn-shoot');
-const btnRetake = document.getElementById('btn-retake');
-const btnDownload = document.getElementById('btn-download');
 const resultArea = document.getElementById('result-area');
 const resultImg = document.getElementById('result-img');
 const msgEl = document.getElementById('msg');
@@ -304,7 +210,6 @@ const fName = document.getElementById('f-name');
 const fPlace = document.getElementById('f-place');
 const fDate = document.getElementById('f-date');
 
-// Set today's date
 fDate.value = new Date().toISOString().split('T')[0];
 
 function updateSign() {
@@ -315,7 +220,6 @@ function updateSign() {
 [fName, fPlace, fDate].forEach(el => el.addEventListener('input', updateSign));
 updateSign();
 
-// Start camera
 async function startCamera() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -356,7 +260,6 @@ function drawSign(ctx, canvasW, canvasH) {
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = outerBorder;
   ctx.strokeRect(sx + outerBorder/2, sy + outerBorder/2, signW - outerBorder, signH - outerBorder);
-
   ctx.font = `${fontSize}px 'Noto Sans JP', sans-serif`;
   ctx.textBaseline = 'middle';
 
@@ -383,23 +286,18 @@ function drawSign(ctx, canvasW, canvasH) {
   ctx.beginPath(); ctx.moveTo(sx, blankTop); ctx.lineTo(sx + signW, blankTop); ctx.stroke();
 }
 
-// Shoot
-btnShoot.addEventListener('click', () => {
+function shoot() {
   const vw = video.videoWidth || 640;
   const vh = video.videoHeight || 480;
-
-  // 端末の向きを検出
   const isLandscape = vw > vh;
 
   if (isLandscape) {
-    // 横向き：そのままキャンバスに描画
     canvasPreview.width = vw;
     canvasPreview.height = vh;
     const ctx = canvasPreview.getContext('2d');
     ctx.drawImage(video, 0, 0, vw, vh);
     drawSign(ctx, vw, vh);
   } else {
-    // 縦向き：画像を90度回転して横向きに変換
     canvasPreview.width = vh;
     canvasPreview.height = vw;
     const ctx = canvasPreview.getContext('2d');
@@ -413,36 +311,52 @@ btnShoot.addEventListener('click', () => {
 
   const dataUrl = canvasPreview.toDataURL('image/jpeg', 0.93);
   resultImg.src = dataUrl;
-
-  // Switch to result view
   resultArea.style.display = 'block';
   video.style.display = 'none';
   signOverlay.style.display = 'none';
-  btnShoot.style.display = 'none';
-  btnRetake.style.display = 'flex';
-  btnDownload.style.display = 'flex';
   msgEl.textContent = '撮影完了！「保存」で端末に画像を保存できます';
 
-  btnDownload.onclick = () => {
+  // 縦向きボタン切替
+  document.getElementById('btn-shoot').style.display = 'none';
+  document.getElementById('btn-retake').style.display = 'flex';
+  document.getElementById('btn-download').style.display = 'flex';
+
+  // 横向きボタン切替
+  document.getElementById('btn-shoot-side').style.display = 'none';
+  document.getElementById('btn-retake-side').style.display = 'flex';
+  document.getElementById('btn-download-side').style.display = 'flex';
+
+  const dl = () => {
     const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
     const a = document.createElement('a');
     a.download = `koujishashin_${ts}.jpg`;
     a.href = dataUrl;
     a.click();
   };
-});
+  document.getElementById('btn-download').onclick = dl;
+  document.getElementById('btn-download-side').onclick = dl;
+}
 
-// Retake
-btnRetake.addEventListener('click', () => {
+function retake() {
   video.style.display = 'block';
   signOverlay.style.display = 'block';
   resultArea.style.display = 'none';
-  btnShoot.style.display = 'flex';
-  btnRetake.style.display = 'none';
-  btnDownload.style.display = 'none';
   msgEl.textContent = '';
   resultImg.src = '';
-});
+
+  document.getElementById('btn-shoot').style.display = 'flex';
+  document.getElementById('btn-retake').style.display = 'none';
+  document.getElementById('btn-download').style.display = 'none';
+
+  document.getElementById('btn-shoot-side').style.display = 'flex';
+  document.getElementById('btn-retake-side').style.display = 'none';
+  document.getElementById('btn-download-side').style.display = 'none';
+}
+
+document.getElementById('btn-shoot').addEventListener('click', shoot);
+document.getElementById('btn-shoot-side').addEventListener('click', shoot);
+document.getElementById('btn-retake').addEventListener('click', retake);
+document.getElementById('btn-retake-side').addEventListener('click', retake);
 </script>
 </body>
 </html>
