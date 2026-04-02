@@ -333,19 +333,10 @@ async function startCamera() {
 }
 startCamera();
 
-// Shoot
-btnShoot.addEventListener('click', () => {
-  const vw = video.videoWidth || 640;
-  const vh = video.videoHeight || 480;
-  canvasPreview.width = vw;
-  canvasPreview.height = vh;
-  const ctx = canvasPreview.getContext('2d');
-  ctx.drawImage(video, 0, 0, vw, vh);
-
-  // Sign dimensions
-  const signW = vw * 0.42;
-  const margin = vw * 0.025;
-  const fontSize = Math.max(12, Math.floor(vw * 0.019));
+function drawSign(ctx, canvasW, canvasH) {
+  const signW = canvasW * 0.38;
+  const margin = canvasW * 0.022;
+  const fontSize = Math.max(11, Math.floor(canvasW * 0.018));
   const rowH = fontSize * 2.3;
   const topRows = [
     ['工事名', fName.value || ''],
@@ -354,17 +345,14 @@ btnShoot.addEventListener('click', () => {
   ];
   const blankH = rowH * 2.2;
   const signH = rowH * topRows.length + blankH + 8;
-  const sx = vw - signW - margin;
-  const sy = vh - signH - margin;
+  const sx = canvasW - signW - margin;
+  const sy = canvasH - signH - margin;
   const labelW = signW * 0.36;
-  const lw = Math.max(1, vw * 0.0012);
-  const outerBorder = Math.max(2, vw * 0.003);
+  const lw = Math.max(1, canvasW * 0.0012);
+  const outerBorder = Math.max(2, canvasW * 0.003);
 
-  // Background
   ctx.fillStyle = '#1a5c2a';
   ctx.fillRect(sx, sy, signW, signH);
-
-  // Outer border
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = outerBorder;
   ctx.strokeRect(sx + outerBorder/2, sy + outerBorder/2, signW - outerBorder, signH - outerBorder);
@@ -374,36 +362,54 @@ btnShoot.addEventListener('click', () => {
 
   topRows.forEach((row, i) => {
     const ry = sy + 4 + rowH * i;
-
     if (i > 0) {
       ctx.strokeStyle = '#fff'; ctx.lineWidth = lw;
       ctx.beginPath(); ctx.moveTo(sx, ry); ctx.lineTo(sx + signW, ry); ctx.stroke();
     }
-
     ctx.strokeStyle = '#fff'; ctx.lineWidth = lw;
     ctx.beginPath(); ctx.moveTo(sx + labelW, ry); ctx.lineTo(sx + labelW, ry + rowH); ctx.stroke();
-
-    // Label background
     ctx.fillStyle = 'rgba(0,0,0,0.28)';
     ctx.fillRect(sx + 1, ry + 1, labelW - 2, rowH - 2);
-
-    // Label
     ctx.fillStyle = '#fff';
     ctx.fillText(row[0], sx + 5, ry + rowH / 2);
-
-    // Value (truncate if too long)
     const maxW = signW - labelW - 10;
     let val = row[1];
-    while (val.length > 0 && ctx.measureText(val).width > maxW) {
-      val = val.slice(0, -1);
-    }
+    while (val.length > 0 && ctx.measureText(val).width > maxW) val = val.slice(0, -1);
     ctx.fillText(val, sx + labelW + 6, ry + rowH / 2);
   });
 
-  // Divider before blank area
   const blankTop = sy + 4 + rowH * topRows.length;
   ctx.strokeStyle = '#fff'; ctx.lineWidth = lw;
   ctx.beginPath(); ctx.moveTo(sx, blankTop); ctx.lineTo(sx + signW, blankTop); ctx.stroke();
+}
+
+// Shoot
+btnShoot.addEventListener('click', () => {
+  const vw = video.videoWidth || 640;
+  const vh = video.videoHeight || 480;
+
+  // 端末の向きを検出
+  const isLandscape = vw > vh;
+
+  if (isLandscape) {
+    // 横向き：そのままキャンバスに描画
+    canvasPreview.width = vw;
+    canvasPreview.height = vh;
+    const ctx = canvasPreview.getContext('2d');
+    ctx.drawImage(video, 0, 0, vw, vh);
+    drawSign(ctx, vw, vh);
+  } else {
+    // 縦向き：画像を90度回転して横向きに変換
+    canvasPreview.width = vh;
+    canvasPreview.height = vw;
+    const ctx = canvasPreview.getContext('2d');
+    ctx.save();
+    ctx.translate(vh, 0);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(video, 0, 0, vw, vh);
+    ctx.restore();
+    drawSign(ctx, vh, vw);
+  }
 
   const dataUrl = canvasPreview.toDataURL('image/jpeg', 0.93);
   resultImg.src = dataUrl;
