@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>工事写真撮影アプリ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --green-dark: #1a5c2a;
+    --green-mid: #155022;
+    --bg: #f4f4f0;
+    --card: #ffffff;
+    --text: #1a1a18;
+    --text-sub: #6b6b66;
+    --border: #d0cfc8;
+    --radius: 12px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text);
+  }
+
+  #app {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px 16px 40px;
+    min-height: 100%;
+  }
+
+  h1 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--green-dark);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h1::before {
+    content: '';
+    display: inline-block;
+    width: 4px; height: 20px;
+    background: var(--green-dark);
+    border-radius: 2px;
+  }
+
+  /* Viewfinder */
+  #viewfinder-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #0d1a10;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    margin-bottom: 16px;
+  }
+
+  #video, #canvas-preview {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  #canvas-preview { display: none; }
+
+  /* Sign overlay */
+  .sign-overlay {
+    position: absolute;
+    bottom: 10px; right: 10px;
+    width: 42%;
+    background: var(--green-dark);
+    border: 2px solid #fff;
+    border-radius: 2px;
+    padding: 3px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .sign-overlay table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #fff;
+  }
+  .sign-overlay .top-rows td {
+    border: 1px solid #fff;
+    padding: 2px 4px;
+    font-size: clamp(7px, 2vw, 11px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: clamp(16px, 4vw, 24px);
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .sign-overlay .top-rows td:first-child {
+    width: 36%;
+    background: rgba(0,0,0,0.28);
+    font-weight: 500;
+  }
+  .sign-overlay .blank-area {
+    border: 1px solid #fff;
+    border-top: none;
+    height: clamp(30px, 8vw, 52px);
+    background: var(--green-dark);
+  }
+
+  /* No camera message */
+  #no-camera-msg {
+    display: none;
+    position: absolute; inset: 0;
+    align-items: center; justify-content: center;
+    color: #7a9e82;
+    font-size: 14px;
+    text-align: center;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 10px;
+  }
+  #no-camera-msg .icon { font-size: 40px; }
+
+  /* Form card */
+  .form-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .field-row:last-child { margin-bottom: 0; }
+
+  .field-row label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-sub);
+  }
+
+  .field-row input {
+    font-size: 15px;
+    font-family: 'Noto Sans JP', sans-serif;
+    padding: 8px 10px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field-row input:focus {
+    border-color: var(--green-dark);
+    background: #fff;
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    flex: 1;
+    height: 52px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:hover { background: #eee; }
+
+  .btn-primary {
+    background: var(--green-dark);
+    color: #fff;
+    border-color: var(--green-dark);
+    font-size: 17px;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary:hover { background: var(--green-mid); }
+
+  .btn-save {
+    background: #1e4d8c;
+    color: #fff;
+    border-color: #1e4d8c;
+  }
+  .btn-save:hover { background: #183e72; }
+
+  #msg {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-top: 10px;
+    text-align: center;
+    min-height: 18px;
+  }
+
+  /* Result */
+  #result-area {
+    display: none;
+    margin-bottom: 14px;
+  }
+  #result-area img {
+    width: 100%;
+    border-radius: var(--radius);
+    display: block;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: #b0afa8;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>工事写真撮影</h1>
+
+  <div id="viewfinder-container">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas-preview"></canvas>
+    <div id="no-camera-msg">
+      <div class="icon">📷</div>
+      <div>カメラへのアクセスを許可してください<br><small>ブラウザの設定からカメラを許可してください</small></div>
+    </div>
+    <div class="sign-overlay" id="sign-overlay">
+      <table>
+        <tbody class="top-rows">
+          <tr><td>工事名</td><td id="s-name">　</td></tr>
+          <tr><td>場　所</td><td id="s-place">　</td></tr>
+          <tr><td>日　付</td><td id="s-date">　</td></tr>
+        </tbody>
+      </table>
+      <div class="blank-area"></div>
+    </div>
+  </div>
+
+  <div id="result-area">
+    <img id="result-img" alt="撮影結果" />
+  </div>
+
+  <div class="form-card">
+    <div class="field-row">
+      <label>工事名</label>
+      <input id="f-name" type="text" placeholder="例: ○○新築工事" />
+    </div>
+    <div class="field-row">
+      <label>場所</label>
+      <input id="f-place" type="text" placeholder="例: ○○市○○町1-2-3" />
+    </div>
+    <div class="field-row">
+      <label>日付</label>
+      <input id="f-date" type="date" />
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="btn-shoot">📷 撮影</button>
+    <button class="btn" id="btn-retake" style="display:none">↩ 撮り直し</button>
+    <button class="btn btn-save" id="btn-download" style="display:none">💾 保存</button>
+  </div>
+  <div id="msg"></div>
+
+  <div class="footer">工事写真撮影アプリ</div>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const canvasPreview = document.getElementById('canvas-preview');
+const signOverlay = document.getElementById('sign-overlay');
+const noCamMsg = document.getElementById('no-camera-msg');
+const btnShoot = document.getElementById('btn-shoot');
+const btnRetake = document.getElementById('btn-retake');
+const btnDownload = document.getElementById('btn-download');
+const resultArea = document.getElementById('result-area');
+const resultImg = document.getElementById('result-img');
+const msgEl = document.getElementById('msg');
+const fName = document.getElementById('f-name');
+const fPlace = document.getElementById('f-place');
+const fDate = document.getElementById('f-date');
+
+// Set today's date
+fDate.value = new Date().toISOString().split('T')[0];
+
+function updateSign() {
+  document.getElementById('s-name').textContent = fName.value || '　';
+  document.getElementById('s-place').textContent = fPlace.value || '　';
+  document.getElementById('s-date').textContent = fDate.value ? fDate.value.replace(/-/g, '/') : '　';
+}
+[fName, fPlace, fDate].forEach(el => el.addEventListener('input', updateSign));
+updateSign();
+
+// Start camera
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1440 } },
+      audio: false
+    });
+    video.srcObject = stream;
+    video.style.display = 'block';
+    noCamMsg.style.display = 'none';
+  } catch(e) {
+    video.style.display = 'none';
+    noCamMsg.style.display = 'flex';
+    msgEl.textContent = 'カメラが使えません。ブラウザの設定でカメラを許可してください。';
+  }
+}
+startCamera();
+
+// Shoot
+btnShoot.addEventListener('click', () => {
+  const vw = video.videoWidth || 640;
+  const vh = video.videoHeight || 480;
+  canvasPreview.width = vw;
+  canvasPreview.height = vh;
+  const ctx = canvasPreview.getContext('2d');
+  ctx.drawImage(video, 0, 0, vw, vh);
+
+  // Sign dimensions
+  const signW = vw * 0.42;
+  const margin = vw * 0.025;
+  const fontSize = Math.max(12, Math.floor(vw * 0.019));
+  const rowH = fontSize * 2.3;
+  const topRows = [
+    ['工事名', fName.value || ''],
+    ['場　所', fPlace.value || ''],
+    ['日　付', fDate.value ? fDate.value.replace(/-/g, '/') : ''],
+  ];
+  const blankH = rowH * 2.2;
+  const signH = rowH * topRows.length + blankH + 8;
+  const sx = vw - signW - margin;
+  const sy = vh - signH - margin;
+  const labelW = signW * 0.36;
+  const lw = Math.max(1, vw * 0.0012);
+  const outerBorder = Math.max(2, vw * 0.003);
+
+  // Background
+  ctx.fillStyle = '#1a5c2a';
+  ctx.fillRect(sx, sy, signW, signH);
+
+  // Outer border
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = outerBorder;
+  ctx.strokeRect(sx + outerBorder/2, sy + outerBorder/2, signW - outerBorder, signH - outerBorder);
+
+  ctx.font = `${fontSize}px 'Noto Sans JP', sans-serif`;
+  ctx.textBaseline = 'middle';
+
+  topRows.forEach((row, i) => {
+    const ry = sy + 4 + rowH * i;
+
+    if (i > 0) {
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(sx, ry); ctx.lineTo(sx + signW, ry); ctx.stroke();
+    }
+
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.moveTo(sx + labelW, ry); ctx.lineTo(sx + labelW, ry + rowH); ctx.stroke();
+
+    // Label background
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    ctx.fillRect(sx + 1, ry + 1, labelW - 2, rowH - 2);
+
+    // Label
+    ctx.fillStyle = '#fff';
+    ctx.fillText(row[0], sx + 5, ry + rowH / 2);
+
+    // Value (truncate if too long)
+    const maxW = signW - labelW - 10;
+    let val = row[1];
+    while (val.length > 0 && ctx.measureText(val).width > maxW) {
+      val = val.slice(0, -1);
+    }
+    ctx.fillText(val, sx + labelW + 6, ry + rowH / 2);
+  });
+
+  // Divider before blank area
+  const blankTop = sy + 4 + rowH * topRows.length;
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.moveTo(sx, blankTop); ctx.lineTo(sx + signW, blankTop); ctx.stroke();
+
+  const dataUrl = canvasPreview.toDataURL('image/jpeg', 0.93);
+  resultImg.src = dataUrl;
+
+  // Switch to result view
+  resultArea.style.display = 'block';
+  video.style.display = 'none';
+  signOverlay.style.display = 'none';
+  btnShoot.style.display = 'none';
+  btnRetake.style.display = 'flex';
+  btnDownload.style.display = 'flex';
+  msgEl.textContent = '撮影完了！「保存」で端末に画像を保存できます';
+
+  btnDownload.onclick = () => {
+    const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const a = document.createElement('a');
+    a.download = `koujishashin_${ts}.jpg`;
+    a.href = dataUrl;
+    a.click();
+  };
+});
+
+// Retake
+btnRetake.addEventListener('click', () => {
+  video.style.display = 'block';
+  signOverlay.style.display = 'block';
+  resultArea.style.display = 'none';
+  btnShoot.style.display = 'flex';
+  btnRetake.style.display = 'none';
+  btnDownload.style.display = 'none';
+  msgEl.textContent = '';
+  resultImg.src = '';
+});
+</script>
+</body>
+</html>
