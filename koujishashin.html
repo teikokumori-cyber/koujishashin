@@ -20,9 +20,7 @@
     --radius: 12px;
   }
   html, body { height: 100%; background: var(--bg); font-family: 'Noto Sans JP', sans-serif; color: var(--text); }
-
   #app { max-width: 520px; margin: 0 auto; padding: 16px 16px 40px; min-height: 100%; }
-
   h1 {
     font-size: 17px; font-weight: 700; letter-spacing: 0.04em;
     color: var(--green-dark); margin-bottom: 14px;
@@ -32,10 +30,7 @@
     content: ''; display: inline-block; width: 4px; height: 20px;
     background: var(--green-dark); border-radius: 2px;
   }
-
-  /* Camera area */
   #camera-area { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
-
   #viewfinder-container {
     position: relative; width: 100%; aspect-ratio: 4/3;
     background: #0d1a10; border-radius: var(--radius);
@@ -43,8 +38,6 @@
   }
   #video, #canvas-preview { width: 100%; height: 100%; object-fit: cover; display: block; }
   #canvas-preview { display: none; }
-
-  /* Sign overlay */
   .sign-overlay {
     position: absolute; bottom: 10px; right: 10px; width: 42%;
     background: var(--green-dark); border: 2px solid #fff;
@@ -59,8 +52,6 @@
   }
   .sign-overlay .top-rows td:first-child { width: 36%; background: rgba(0,0,0,0.28); font-weight: 500; }
   .sign-overlay .blank-area { border: 1px solid #fff; border-top: none; height: clamp(30px, 8vw, 52px); background: var(--green-dark); }
-
-  /* No camera */
   #no-camera-msg {
     display: none; position: absolute; inset: 0;
     align-items: center; justify-content: center;
@@ -68,8 +59,6 @@
     padding: 1rem; flex-direction: column; gap: 10px;
   }
   #no-camera-msg .icon { font-size: 40px; }
-
-  /* Side controls (landscape) */
   #side-controls {
     display: none;
     flex-direction: column; justify-content: center;
@@ -77,13 +66,10 @@
   }
   #side-controls .btn {
     width: 64px; height: 64px; border-radius: 50%;
-    flex-direction: column; gap: 2px; padding: 4px;
-    font-size: 11px;
+    flex-direction: column; gap: 2px; padding: 4px; font-size: 11px;
   }
   #side-controls .btn-primary { font-size: 24px; }
-  #side-controls .shoot-label { font-size: 10px; margin-top: 2px; }
-
-  /* Form card */
+  .shoot-label { font-size: 10px; margin-top: 2px; }
   .form-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; border: 1px solid var(--border); }
   .field-row { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 10px; margin-bottom: 10px; }
   .field-row:last-child { margin-bottom: 0; }
@@ -95,8 +81,6 @@
     color: var(--text); width: 100%; outline: none; transition: border-color 0.15s;
   }
   .field-row input:focus { border-color: var(--green-dark); background: #fff; }
-
-  /* Buttons */
   .btn-row { display: flex; gap: 10px; }
   .btn {
     flex: 1; height: 52px; border-radius: var(--radius);
@@ -111,16 +95,11 @@
   .btn-primary:hover { background: var(--green-mid); }
   .btn-save { background: #1e4d8c; color: #fff; border-color: #1e4d8c; }
   .btn-save:hover { background: #183e72; }
-
   #msg { font-size: 13px; color: var(--text-sub); margin-top: 10px; text-align: center; min-height: 18px; }
-
-  /* Result */
   #result-area { display: none; margin-bottom: 14px; }
   #result-area img { width: 100%; border-radius: var(--radius); display: block; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
-
   .footer { text-align: center; font-size: 11px; color: #b0afa8; margin-top: 20px; }
 
-  /* 横向き */
   @media (orientation: landscape) {
     #app { max-width: 100%; padding: 6px 10px 12px; }
     h1 { font-size: 13px; margin-bottom: 6px; }
@@ -134,12 +113,14 @@
     .field-row label { font-size: 11px; }
     #msg { font-size: 12px; margin-top: 6px; }
   }
+  @media (orientation: portrait) {
+    #side-controls { display: none !important; }
+  }
 </style>
 </head>
 <body>
 <div id="app">
   <h1>工事写真撮影</h1>
-
   <div id="camera-area">
     <div id="viewfinder-container">
       <video id="video" autoplay playsinline muted></video>
@@ -159,8 +140,6 @@
         <div class="blank-area"></div>
       </div>
     </div>
-
-    <!-- 横向き時の右サイドボタン -->
     <div id="side-controls">
       <button class="btn btn-primary" id="btn-shoot-side">📷<span class="shoot-label">撮影</span></button>
       <button class="btn" id="btn-retake-side" style="display:none">↩<span class="shoot-label">撮り直し</span></button>
@@ -173,28 +152,17 @@
   </div>
 
   <div class="form-card">
-    <div class="field-row">
-      <label>工事名</label>
-      <input id="f-name" type="text" placeholder="例: ○○新築工事" />
-    </div>
-    <div class="field-row">
-      <label>場所</label>
-      <input id="f-place" type="text" placeholder="例: ○○市○○町1-2-3" />
-    </div>
-    <div class="field-row">
-      <label>日付</label>
-      <input id="f-date" type="date" />
-    </div>
+    <div class="field-row"><label>工事名</label><input id="f-name" type="text" placeholder="例: ○○新築工事" /></div>
+    <div class="field-row"><label>場所</label><input id="f-place" type="text" placeholder="例: ○○市○○町1-2-3" /></div>
+    <div class="field-row"><label>日付</label><input id="f-date" type="date" /></div>
   </div>
 
-  <!-- 縦向き時のボタン -->
   <div class="btn-row">
     <button class="btn btn-primary" id="btn-shoot">📷 撮影</button>
     <button class="btn" id="btn-retake" style="display:none">↩ 撮り直し</button>
     <button class="btn btn-save" id="btn-download" style="display:none">💾 保存</button>
   </div>
   <div id="msg"></div>
-
   <div class="footer">工事写真撮影アプリ</div>
 </div>
 
@@ -289,25 +257,14 @@ function drawSign(ctx, canvasW, canvasH) {
 function shoot() {
   const vw = video.videoWidth || 640;
   const vh = video.videoHeight || 480;
-  const isLandscape = vw > vh;
+  // スクリーンの向きで判定（カメラの向きではなく端末の向き）
+  const screenLandscape = window.innerWidth > window.innerHeight;
 
-  if (isLandscape) {
-    canvasPreview.width = vw;
-    canvasPreview.height = vh;
-    const ctx = canvasPreview.getContext('2d');
-    ctx.drawImage(video, 0, 0, vw, vh);
-    drawSign(ctx, vw, vh);
-  } else {
-    canvasPreview.width = vh;
-    canvasPreview.height = vw;
-    const ctx = canvasPreview.getContext('2d');
-    ctx.save();
-    ctx.translate(vh, 0);
-    ctx.rotate(Math.PI / 2);
-    ctx.drawImage(video, 0, 0, vw, vh);
-    ctx.restore();
-    drawSign(ctx, vh, vw);
-  }
+  canvasPreview.width = vw;
+  canvasPreview.height = vh;
+  const ctx = canvasPreview.getContext('2d');
+  ctx.drawImage(video, 0, 0, vw, vh);
+  drawSign(ctx, vw, vh);
 
   const dataUrl = canvasPreview.toDataURL('image/jpeg', 0.93);
   resultImg.src = dataUrl;
@@ -316,12 +273,9 @@ function shoot() {
   signOverlay.style.display = 'none';
   msgEl.textContent = '撮影完了！「保存」で端末に画像を保存できます';
 
-  // 縦向きボタン切替
   document.getElementById('btn-shoot').style.display = 'none';
   document.getElementById('btn-retake').style.display = 'flex';
   document.getElementById('btn-download').style.display = 'flex';
-
-  // 横向きボタン切替
   document.getElementById('btn-shoot-side').style.display = 'none';
   document.getElementById('btn-retake-side').style.display = 'flex';
   document.getElementById('btn-download-side').style.display = 'flex';
@@ -343,11 +297,9 @@ function retake() {
   resultArea.style.display = 'none';
   msgEl.textContent = '';
   resultImg.src = '';
-
   document.getElementById('btn-shoot').style.display = 'flex';
   document.getElementById('btn-retake').style.display = 'none';
   document.getElementById('btn-download').style.display = 'none';
-
   document.getElementById('btn-shoot-side').style.display = 'flex';
   document.getElementById('btn-retake-side').style.display = 'none';
   document.getElementById('btn-download-side').style.display = 'none';
