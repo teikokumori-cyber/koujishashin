@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>工事写真撮影アプリ</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -14,83 +14,108 @@
     --bg: #f4f4f0; --card: #ffffff; --text: #1a1a18;
     --text-sub: #6b6b66; --border: #d0cfc8; --radius: 12px;
   }
-  html, body { height: 100%; background: var(--bg); font-family: 'Noto Sans JP', sans-serif; color: var(--text); }
-  #app { max-width: 520px; margin: 0 auto; padding: 16px 16px 40px; min-height: 100%; }
+  html, body { height: 100%; background: var(--bg); font-family: 'Noto Sans JP', sans-serif; color: var(--text); overflow-x: hidden; }
+
+  /* ===== 縦向きレイアウト ===== */
+  #app-portrait {
+    max-width: 520px; margin: 0 auto; padding: 16px 16px 40px;
+  }
   h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.04em; color: var(--green-dark); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
   h1::before { content: ''; display: inline-block; width: 4px; height: 20px; background: var(--green-dark); border-radius: 2px; }
 
-  #camera-area { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
-
-  #viewfinder-container {
+  #viewfinder-portrait {
     position: relative; width: 100%; aspect-ratio: 4/3;
     background: #0d1a10; border-radius: var(--radius);
     overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    touch-action: none; margin-bottom: 16px;
+  }
+
+  /* ===== 横向きレイアウト：全画面 ===== */
+  #app-landscape {
+    display: none;
+    position: fixed; inset: 0;
+    background: #0d1a10;
     touch-action: none;
   }
-  #preview-canvas { width: 100%; height: 100%; display: block; }
+  #viewfinder-landscape {
+    position: absolute; inset: 0;
+  }
+
+  /* キャンバス共通 */
+  .preview-canvas { width: 100%; height: 100%; display: block; }
   #canvas-preview { display: none; }
 
-  /* ズーム表示 - 縦向き：下中央、横向き：上中央 */
-  #zoom-level {
-    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.6); color: #fff; font-size: 12px;
-    padding: 4px 14px; border-radius: 20px; pointer-events: none;
-    white-space: nowrap;
-  }
-  #zoom-hint {
-    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.55); color: #fff; font-size: 11px;
-    padding: 3px 10px; border-radius: 20px; white-space: nowrap;
-    pointer-events: none; transition: opacity 1s;
-  }
-
-  /* 看板 - 縦向き：右下、横向き：右下（余白確保） */
+  /* 看板 */
   .sign-overlay {
-    position: absolute; right: 8px;
-    width: 38%;
+    position: absolute; right: 10px; bottom: 10px;
     background: var(--green-dark); border: 2px solid #fff;
-    border-radius: 2px; padding: 3px; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-    pointer-events: none;
+    border-radius: 2px; padding: 3px; pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
-  /* 縦向き：看板をズーム表示の上に */
-  .sign-overlay { bottom: 36px; }
-
   .sign-overlay table { width: 100%; border-collapse: collapse; color: #fff; }
   .sign-overlay .top-rows td {
-    border: 1px solid #fff; padding: 2px 4px;
-    font-size: clamp(6px, 1.8vw, 10px); white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
-    height: clamp(14px, 3.5vw, 22px); font-family: 'Noto Sans JP', sans-serif;
+    border: 1px solid #fff; padding: 2px 4px; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; font-family: 'Noto Sans JP', sans-serif;
   }
   .sign-overlay .top-rows td:first-child { width: 36%; background: rgba(0,0,0,0.28); font-weight: 500; }
   .sign-overlay .blank-area {
     border: 1px solid #fff; border-top: none;
-    min-height: clamp(24px, 7vw, 44px); background: var(--green-dark);
+    background: var(--green-dark);
     display: flex; align-items: center; justify-content: center; padding: 2px 4px;
   }
-  #s-memo { color: #fff; font-size: clamp(6px, 1.8vw, 10px); font-family: 'Noto Sans JP', sans-serif; text-align: center; word-break: break-all; line-height: 1.3; }
+  .sign-memo { color: #fff; font-family: 'Noto Sans JP', sans-serif; text-align: center; word-break: break-all; line-height: 1.3; }
 
-  #no-camera-msg {
-    display: none; position: absolute; inset: 0;
-    align-items: center; justify-content: center;
-    color: #7a9e82; font-size: 14px; text-align: center;
-    padding: 1rem; flex-direction: column; gap: 10px;
-  }
-  #no-camera-msg .icon { font-size: 40px; }
+  /* 縦向き看板サイズ */
+  #sign-portrait { width: 42%; }
+  #sign-portrait .top-rows td { font-size: clamp(7px, 2vw, 11px); height: clamp(16px, 4vw, 24px); }
+  #sign-portrait .blank-area { min-height: clamp(28px, 7vw, 48px); }
+  #sign-portrait .sign-memo { font-size: clamp(7px, 2vw, 11px); }
 
-  /* 横向きサイドボタン */
-  #side-controls {
-    display: none; flex-direction: column;
-    justify-content: center; align-items: center;
-    gap: 12px; width: 72px; flex-shrink: 0;
+  /* 横向き看板サイズ：画面幅基準で小さめ */
+  #sign-landscape { width: 28%; }
+  #sign-landscape .top-rows td { font-size: clamp(8px, 1.4vw, 13px); height: clamp(18px, 2.8vw, 26px); }
+  #sign-landscape .blank-area { min-height: clamp(32px, 5.5vw, 52px); }
+  #sign-landscape .sign-memo { font-size: clamp(8px, 1.4vw, 13px); }
+
+  /* ズーム表示 */
+  .zoom-level {
+    position: absolute; left: 10px; bottom: 10px;
+    background: rgba(0,0,0,0.6); color: #fff; font-size: 12px;
+    padding: 4px 12px; border-radius: 20px; pointer-events: none;
   }
-  #side-controls .btn { width: 60px; height: 60px; border-radius: 50%; flex-direction: column; gap: 2px; padding: 4px; font-size: 11px; }
-  #side-controls .btn-primary { font-size: 22px; }
-  .shoot-label { font-size: 10px; margin-top: 2px; }
+  .zoom-hint {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.55); color: #fff; font-size: 11px;
+    padding: 3px 12px; border-radius: 20px; pointer-events: none; transition: opacity 1s;
+    white-space: nowrap;
+  }
+
+  /* 横向き撮影ボタン（右端縦並び） */
+  #landscape-controls {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 10px; align-items: center;
+    z-index: 10;
+  }
+  /* 看板と被らないよう右端から少し内側＋下 */
+  #sign-landscape { right: 10px; bottom: 10px; }
+  #landscape-controls { right: calc(28% + 18px); }
+
+  .ls-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.7);
+    background: rgba(0,0,0,0.5); color: #fff;
+    font-size: 10px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .ls-btn:active { transform: scale(0.94); }
+  .ls-btn-primary { background: rgba(26,92,42,0.85); border-color: #fff; font-size: 22px; }
+  .ls-btn-save { background: rgba(30,77,140,0.85); }
+  .ls-label { font-size: 10px; }
 
   /* フォーム */
   .form-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; border: 1px solid var(--border); }
-  .section-label { font-size: 12px; font-weight: 700; color: var(--green-dark); margin-bottom: 10px; letter-spacing: 0.05em; }
+  .section-label { font-size: 12px; font-weight: 700; color: var(--green-dark); margin-bottom: 10px; }
   .field-row { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 10px; margin-bottom: 10px; }
   .field-row:last-child { margin-bottom: 0; }
   .field-row label { font-size: 13px; font-weight: 500; color: var(--text-sub); }
@@ -103,7 +128,6 @@
   .field-row input { height: 40px; }
   .field-row textarea { height: 64px; resize: none; line-height: 1.5; }
   .field-row input:focus, .field-row textarea:focus { border-color: var(--green-dark); background: #fff; }
-
   .btn-row { display: flex; gap: 10px; }
   .btn {
     flex: 1; height: 52px; border-radius: var(--radius);
@@ -113,72 +137,45 @@
     display: flex; align-items: center; justify-content: center; gap: 6px;
   }
   .btn:active { transform: scale(0.97); }
-  .btn:hover { background: #eee; }
   .btn-primary { background: var(--green-dark); color: #fff; border-color: var(--green-dark); font-size: 17px; }
   .btn-primary:hover { background: var(--green-mid); }
   .btn-save { background: #1e4d8c; color: #fff; border-color: #1e4d8c; }
-  .btn-save:hover { background: #183e72; }
-
   #msg { font-size: 13px; color: var(--text-sub); margin-top: 10px; text-align: center; min-height: 18px; }
   #result-area { display: none; margin-bottom: 14px; }
   #result-area img { width: 100%; border-radius: var(--radius); display: block; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
   .footer { text-align: center; font-size: 11px; color: #b0afa8; margin-top: 20px; }
 
-  /* 横向き */
-  @media (orientation: landscape) {
-    #app { max-width: 100%; padding: 4px 8px 10px; }
-    h1 { font-size: 13px; margin-bottom: 5px; }
-    #camera-area { flex-direction: row; align-items: stretch; margin-bottom: 6px; }
-    #viewfinder-container { flex: 1; aspect-ratio: auto; min-height: 0; }
-    #side-controls { display: flex; }
-    .btn-row { display: none !important; }
-    /* 横向き時：看板を右下（ズーム表示と被らない位置） */
-    .sign-overlay { bottom: 8px; right: 8px; width: 32%; }
-    /* 横向き時：ズーム表示を左下 */
-    #zoom-level { bottom: 8px; left: 8px; transform: none; font-size: 11px; }
-    #zoom-hint { top: 8px; }
-    .form-card { padding: 6px 10px; margin-bottom: 5px; }
-    .section-label { font-size: 11px; margin-bottom: 5px; }
-    .field-row { margin-bottom: 4px; gap: 6px; grid-template-columns: 52px 1fr; }
-    .field-row input { height: 30px; font-size: 12px; }
-    .field-row textarea { height: 46px; font-size: 12px; }
-    .field-row label { font-size: 11px; }
-    #msg { font-size: 11px; margin-top: 4px; }
+  #no-camera-msg {
+    display: none; position: absolute; inset: 0;
+    align-items: center; justify-content: center;
+    color: #7a9e82; font-size: 14px; text-align: center;
+    padding: 1rem; flex-direction: column; gap: 10px;
   }
-  @media (orientation: portrait) {
-    #side-controls { display: none !important; }
-  }
+  #no-camera-msg .icon { font-size: 40px; }
 </style>
 </head>
 <body>
-<div id="app">
+
+<!-- 縦向きUI -->
+<div id="app-portrait">
   <h1>工事写真撮影</h1>
-  <div id="camera-area">
-    <div id="viewfinder-container">
-      <canvas id="preview-canvas"></canvas>
-      <canvas id="canvas-preview"></canvas>
-      <div id="no-camera-msg">
-        <div class="icon">📷</div>
-        <div>カメラへのアクセスを許可してください<br><small>ブラウザの設定からカメラを許可してください</small></div>
-      </div>
-      <div class="sign-overlay" id="sign-overlay">
-        <table>
-          <tbody class="top-rows">
-            <tr><td>工事名</td><td id="s-name">　</td></tr>
-            <tr><td>場　所</td><td id="s-place">　</td></tr>
-            <tr><td>日　付</td><td id="s-date">　</td></tr>
-          </tbody>
-        </table>
-        <div class="blank-area"><div id="s-memo"></div></div>
-      </div>
-      <div id="zoom-hint">2本指でズーム調整</div>
-      <div id="zoom-level">🔍 ×1.0</div>
+  <div id="viewfinder-portrait">
+    <canvas id="preview-canvas-p" class="preview-canvas"></canvas>
+    <canvas id="canvas-preview"></canvas>
+    <div id="no-camera-msg">
+      <div class="icon">📷</div>
+      <div>カメラへのアクセスを許可してください<br><small>ブラウザの設定からカメラを許可してください</small></div>
     </div>
-    <div id="side-controls">
-      <button class="btn btn-primary" id="btn-shoot-side">📷<span class="shoot-label">撮影</span></button>
-      <button class="btn" id="btn-retake-side" style="display:none">↩<span class="shoot-label">撮り直し</span></button>
-      <button class="btn btn-save" id="btn-download-side" style="display:none">💾<span class="shoot-label">保存</span></button>
+    <div class="sign-overlay" id="sign-portrait">
+      <table><tbody class="top-rows">
+        <tr><td>工事名</td><td id="s-name-p">　</td></tr>
+        <tr><td>場　所</td><td id="s-place-p">　</td></tr>
+        <tr><td>日　付</td><td id="s-date-p">　</td></tr>
+      </tbody></table>
+      <div class="blank-area"><div class="sign-memo" id="s-memo-p"></div></div>
     </div>
+    <div class="zoom-hint" id="zoom-hint-p">2本指でズーム調整</div>
+    <div class="zoom-level" id="zoom-level-p">🔍 ×1.0</div>
   </div>
 
   <div id="result-area">
@@ -192,32 +189,46 @@
     <div class="field-row"><label>日付</label><input id="f-date" type="date" /></div>
     <div class="field-row"><label>空白欄</label><textarea id="f-memo" placeholder="例: 工種・備考など（任意）"></textarea></div>
   </div>
-
   <div class="btn-row">
-    <button class="btn btn-primary" id="btn-shoot">📷 撮影</button>
-    <button class="btn" id="btn-retake" style="display:none">↩ 撮り直し</button>
-    <button class="btn btn-save" id="btn-download" style="display:none">💾 保存</button>
+    <button class="btn btn-primary" id="btn-shoot-p">📷 撮影</button>
+    <button class="btn" id="btn-retake-p" style="display:none">↩ 撮り直し</button>
+    <button class="btn btn-save" id="btn-download-p" style="display:none">💾 保存</button>
   </div>
   <div id="msg"></div>
   <div class="footer">工事写真撮影アプリ</div>
 </div>
 
+<!-- 横向きUI（全画面） -->
+<div id="app-landscape">
+  <div id="viewfinder-landscape">
+    <canvas id="preview-canvas-l" class="preview-canvas"></canvas>
+    <div class="sign-overlay" id="sign-landscape">
+      <table><tbody class="top-rows">
+        <tr><td>工事名</td><td id="s-name-l">　</td></tr>
+        <tr><td>場　所</td><td id="s-place-l">　</td></tr>
+        <tr><td>日　付</td><td id="s-date-l">　</td></tr>
+      </tbody></table>
+      <div class="blank-area"><div class="sign-memo" id="s-memo-l"></div></div>
+    </div>
+    <div class="zoom-hint" id="zoom-hint-l">2本指でズーム調整</div>
+    <div class="zoom-level" id="zoom-level-l">🔍 ×1.0</div>
+    <div id="landscape-controls">
+      <button class="ls-btn ls-btn-primary" id="btn-shoot-l">📷<span class="ls-label">撮影</span></button>
+      <button class="ls-btn" id="btn-retake-l" style="display:none">↩<span class="ls-label">撮り直し</span></button>
+      <button class="ls-btn ls-btn-save" id="btn-download-l" style="display:none">💾<span class="ls-label">保存</span></button>
+    </div>
+  </div>
+</div>
+
 <script>
-const previewCanvas = document.getElementById('preview-canvas');
-const previewCtx = previewCanvas.getContext('2d');
-const canvasPreview = document.getElementById('canvas-preview');
-const signOverlay = document.getElementById('sign-overlay');
-const noCamMsg = document.getElementById('no-camera-msg');
-const resultArea = document.getElementById('result-area');
-const resultImg = document.getElementById('result-img');
-const msgEl = document.getElementById('msg');
 const fName = document.getElementById('f-name');
 const fPlace = document.getElementById('f-place');
 const fDate = document.getElementById('f-date');
 const fMemo = document.getElementById('f-memo');
-const zoomLevelEl = document.getElementById('zoom-level');
-const zoomHint = document.getElementById('zoom-hint');
-const viewfinderContainer = document.getElementById('viewfinder-container');
+const msgEl = document.getElementById('msg');
+const resultArea = document.getElementById('result-area');
+const resultImg = document.getElementById('result-img');
+const canvasPreview = document.getElementById('canvas-preview');
 
 fDate.value = new Date().toISOString().split('T')[0];
 
@@ -226,33 +237,58 @@ videoEl.autoplay = true; videoEl.playsInline = true; videoEl.muted = true;
 
 let zoomScale = 1.0;
 let shooting = false;
+let isLandscape = false;
 
 function updateSign() {
-  document.getElementById('s-name').textContent = fName.value || '　';
-  document.getElementById('s-place').textContent = fPlace.value || '　';
-  document.getElementById('s-date').textContent = fDate.value ? fDate.value.replace(/-/g, '/') : '　';
-  document.getElementById('s-memo').textContent = fMemo.value || '';
+  const name = fName.value || '　';
+  const place = fPlace.value || '　';
+  const date = fDate.value ? fDate.value.replace(/-/g, '/') : '　';
+  const memo = fMemo.value || '';
+  ['p','l'].forEach(s => {
+    document.getElementById(`s-name-${s}`).textContent = name;
+    document.getElementById(`s-place-${s}`).textContent = place;
+    document.getElementById(`s-date-${s}`).textContent = date;
+    document.getElementById(`s-memo-${s}`).textContent = memo;
+  });
 }
 [fName, fPlace, fDate, fMemo].forEach(el => el.addEventListener('input', updateSign));
 updateSign();
 
-function resizePreviewCanvas() {
-  const rect = viewfinderContainer.getBoundingClientRect();
-  previewCanvas.width = Math.round(rect.width);
-  previewCanvas.height = Math.round(rect.height);
+// レイアウト切替
+function applyOrientation() {
+  isLandscape = window.innerWidth > window.innerHeight;
+  document.getElementById('app-portrait').style.display = isLandscape ? 'none' : 'block';
+  document.getElementById('app-landscape').style.display = isLandscape ? 'block' : 'none';
+  resizeCanvases();
+}
+
+function resizeCanvases() {
+  const pc = document.getElementById('preview-canvas-p');
+  const rp = document.getElementById('viewfinder-portrait').getBoundingClientRect();
+  pc.width = Math.round(rp.width); pc.height = Math.round(rp.height);
+
+  const lc = document.getElementById('preview-canvas-l');
+  lc.width = window.innerWidth; lc.height = window.innerHeight;
+}
+
+function getActiveCanvas() {
+  return isLandscape
+    ? document.getElementById('preview-canvas-l')
+    : document.getElementById('preview-canvas-p');
 }
 
 function renderPreview() {
   if (shooting) return;
   requestAnimationFrame(renderPreview);
-  const cw = previewCanvas.width, ch = previewCanvas.height;
+  const canvas = getActiveCanvas();
+  const ctx = canvas.getContext('2d');
+  const cw = canvas.width, ch = canvas.height;
   const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
   if (!vw || !vh) return;
-  previewCtx.fillStyle = '#0d1a10';
-  previewCtx.fillRect(0, 0, cw, ch);
-  const drawW = cw * zoomScale;
-  const drawH = ch * zoomScale;
-  previewCtx.drawImage(videoEl, (cw - drawW) / 2, (ch - drawH) / 2, drawW, drawH);
+  ctx.fillStyle = '#0d1a10';
+  ctx.fillRect(0, 0, cw, ch);
+  const dw = cw * zoomScale, dh = ch * zoomScale;
+  ctx.drawImage(videoEl, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
 }
 
 async function startCamera() {
@@ -263,40 +299,54 @@ async function startCamera() {
     });
     videoEl.srcObject = stream;
     await videoEl.play();
-    noCamMsg.style.display = 'none';
-    resizePreviewCanvas();
+    document.getElementById('no-camera-msg').style.display = 'none';
+    resizeCanvases();
     renderPreview();
-    setTimeout(() => { zoomHint.style.opacity = '0'; }, 3000);
+    setTimeout(() => {
+      document.getElementById('zoom-hint-p').style.opacity = '0';
+      document.getElementById('zoom-hint-l').style.opacity = '0';
+    }, 3000);
   } catch(e) {
-    noCamMsg.style.display = 'flex';
-    msgEl.textContent = 'カメラが使えません。ブラウザの設定でカメラを許可してください。';
+    document.getElementById('no-camera-msg').style.display = 'flex';
+    msgEl.textContent = 'カメラが使えません。';
   }
 }
+
+window.addEventListener('resize', applyOrientation);
+applyOrientation();
 startCamera();
-window.addEventListener('resize', resizePreviewCanvas);
 
-// ピンチズーム
-let lastDist = null, lastScale = 1.0;
-viewfinderContainer.addEventListener('touchstart', e => {
-  if (e.touches.length === 2) {
-    lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-    lastScale = zoomScale;
-  }
-}, { passive: true });
-viewfinderContainer.addEventListener('touchmove', e => {
-  if (e.touches.length === 2 && lastDist) {
-    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-    zoomScale = Math.min(1.5, Math.max(0.35, lastScale * (dist / lastDist)));
-    const display = Math.round((1 / zoomScale) * 10) / 10;
-    zoomLevelEl.textContent = '🔍 ×' + display.toFixed(1);
-  }
-}, { passive: true });
-viewfinderContainer.addEventListener('touchend', () => { lastDist = null; }, { passive: true });
+// ピンチズーム（縦・横両対応）
+function addPinch(el, zoomLevelId) {
+  let lastDist = null, lastScale = 1.0;
+  el.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      lastScale = zoomScale;
+    }
+  }, { passive: true });
+  el.addEventListener('touchmove', e => {
+    if (e.touches.length === 2 && lastDist) {
+      const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      zoomScale = Math.min(1.5, Math.max(0.35, lastScale * (dist / lastDist)));
+      const d = Math.round((1 / zoomScale) * 10) / 10;
+      document.getElementById(zoomLevelId).textContent = '🔍 ×' + d.toFixed(1);
+      // もう一方も同期
+      ['zoom-level-p','zoom-level-l'].forEach(id => {
+        document.getElementById(id).textContent = '🔍 ×' + d.toFixed(1);
+      });
+    }
+  }, { passive: true });
+  el.addEventListener('touchend', () => { lastDist = null; }, { passive: true });
+}
+addPinch(document.getElementById('viewfinder-portrait'), 'zoom-level-p');
+addPinch(document.getElementById('app-landscape'), 'zoom-level-l');
 
+// 看板描画
 function drawSign(ctx, canvasW, canvasH) {
-  const signW = canvasW * 0.36;
-  const margin = canvasW * 0.02;
-  const fontSize = Math.max(11, Math.floor(canvasW * 0.017));
+  const signW = canvasW * 0.34;
+  const margin = canvasW * 0.018;
+  const fontSize = Math.max(11, Math.floor(canvasW * 0.016));
   const rowH = fontSize * 2.3;
   const topRows = [
     ['工事名', fName.value || ''],
@@ -311,8 +361,7 @@ function drawSign(ctx, canvasW, canvasH) {
   const lw = Math.max(1, canvasW * 0.001);
   const ob = Math.max(2, canvasW * 0.003);
 
-  ctx.fillStyle = '#1a5c2a';
-  ctx.fillRect(sx, sy, signW, signH);
+  ctx.fillStyle = '#1a5c2a'; ctx.fillRect(sx, sy, signW, signH);
   ctx.strokeStyle = '#fff'; ctx.lineWidth = ob;
   ctx.strokeRect(sx + ob/2, sy + ob/2, signW - ob, signH - ob);
   ctx.font = `${fontSize}px 'Noto Sans JP', sans-serif`;
@@ -330,7 +379,8 @@ function drawSign(ctx, canvasW, canvasH) {
   });
 
   const blankTop = sy + 4 + rowH * topRows.length;
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(sx, blankTop); ctx.lineTo(sx + signW, blankTop); ctx.stroke();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.moveTo(sx, blankTop); ctx.lineTo(sx + signW, blankTop); ctx.stroke();
 
   const memo = fMemo.value.trim();
   if (memo) {
@@ -354,40 +404,57 @@ function shoot() {
   canvasPreview.width = vw; canvasPreview.height = vh;
   const ctx = canvasPreview.getContext('2d');
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, vw, vh);
-  const drawW = vw * zoomScale, drawH = vh * zoomScale;
-  ctx.drawImage(videoEl, (vw - drawW) / 2, (vh - drawH) / 2, drawW, drawH);
+  const dw = vw * zoomScale, dh = vh * zoomScale;
+  ctx.drawImage(videoEl, (vw - dw) / 2, (vh - dh) / 2, dw, dh);
   drawSign(ctx, vw, vh);
 
   const dataUrl = canvasPreview.toDataURL('image/jpeg', 0.93);
   resultImg.src = dataUrl;
-  resultArea.style.display = 'block';
-  signOverlay.style.display = 'none';
-  zoomLevelEl.style.display = 'none';
-  previewCanvas.style.display = 'none';
-  msgEl.textContent = '撮影完了！「保存」で端末に画像を保存できます';
-  ['btn-shoot','btn-shoot-side'].forEach(id => document.getElementById(id).style.display = 'none');
-  ['btn-retake','btn-download','btn-retake-side','btn-download-side'].forEach(id => document.getElementById(id).style.display = 'flex');
-  const dl = () => { const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-'); const a = document.createElement('a'); a.download=`koujishashin_${ts}.jpg`; a.href=dataUrl; a.click(); };
-  document.getElementById('btn-download').onclick = dl;
-  document.getElementById('btn-download-side').onclick = dl;
+
+  if (!isLandscape) {
+    resultArea.style.display = 'block';
+    document.getElementById('viewfinder-portrait').style.display = 'none';
+    msgEl.textContent = '撮影完了！「保存」で端末に画像を保存できます';
+    document.getElementById('btn-shoot-p').style.display = 'none';
+    document.getElementById('btn-retake-p').style.display = 'flex';
+    document.getElementById('btn-download-p').style.display = 'flex';
+  } else {
+    // 横向きは全画面に結果を表示
+    const lc = document.getElementById('preview-canvas-l');
+    const lctx = lc.getContext('2d');
+    lctx.drawImage(canvasPreview, 0, 0, lc.width, lc.height);
+    document.getElementById('sign-landscape').style.display = 'none';
+    document.getElementById('zoom-level-l').style.display = 'none';
+    document.getElementById('btn-shoot-l').style.display = 'none';
+    document.getElementById('btn-retake-l').style.display = 'flex';
+    document.getElementById('btn-download-l').style.display = 'flex';
+  }
+
+  const dl = () => {
+    const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    const a = document.createElement('a');
+    a.download = `koujishashin_${ts}.jpg`; a.href = dataUrl; a.click();
+  };
+  document.getElementById('btn-download-p').onclick = dl;
+  document.getElementById('btn-download-l').onclick = dl;
 }
 
 function retake() {
   shooting = false;
-  previewCanvas.style.display = 'block';
-  signOverlay.style.display = 'block';
-  zoomLevelEl.style.display = 'block';
   resultArea.style.display = 'none';
+  document.getElementById('viewfinder-portrait').style.display = 'block';
+  document.getElementById('sign-landscape').style.display = 'block';
+  document.getElementById('zoom-level-l').style.display = 'block';
   msgEl.textContent = ''; resultImg.src = '';
   renderPreview();
-  ['btn-shoot','btn-shoot-side'].forEach(id => document.getElementById(id).style.display = 'flex');
-  ['btn-retake','btn-download','btn-retake-side','btn-download-side'].forEach(id => document.getElementById(id).style.display = 'none');
+  ['btn-shoot-p','btn-shoot-l'].forEach(id => document.getElementById(id).style.display = 'flex');
+  ['btn-retake-p','btn-download-p','btn-retake-l','btn-download-l'].forEach(id => document.getElementById(id).style.display = 'none');
 }
 
-document.getElementById('btn-shoot').addEventListener('click', shoot);
-document.getElementById('btn-shoot-side').addEventListener('click', shoot);
-document.getElementById('btn-retake').addEventListener('click', retake);
-document.getElementById('btn-retake-side').addEventListener('click', retake);
+document.getElementById('btn-shoot-p').addEventListener('click', shoot);
+document.getElementById('btn-shoot-l').addEventListener('click', shoot);
+document.getElementById('btn-retake-p').addEventListener('click', retake);
+document.getElementById('btn-retake-l').addEventListener('click', retake);
 </script>
 </body>
 </html>
