@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>工事写真撮影アプリ</title>
@@ -11,450 +11,438 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   :root {
     --green-dark: #1a5c2a; --green-mid: #155022;
-    --bg: #f4f4f0; --card: #ffffff; --text: #1a1a18;
+    --bg: #f4f4f0; --card: #fff; --text: #1a1a18;
     --text-sub: #6b6b66; --border: #d0cfc8; --radius: 12px;
   }
-  html, body { height: 100%; background: var(--bg); font-family: 'Noto Sans JP', sans-serif; color: var(--text); overflow-x: hidden; }
-
-  /* ===== 縦向きレイアウト ===== */
-  #app-portrait {
-    max-width: 520px; margin: 0 auto; padding: 16px 16px 40px;
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text);
+    overflow: hidden;
   }
-  h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.04em; color: var(--green-dark); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+  /* ========== 縦向き ========== */
+  #ui-portrait {
+    display: flex; flex-direction: column;
+    width: 100%; min-height: 100%;
+    padding: 16px 16px 32px;
+    overflow-y: auto;
+  }
+  h1 { font-size: 17px; font-weight: 700; color: var(--green-dark); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
   h1::before { content: ''; display: inline-block; width: 4px; height: 20px; background: var(--green-dark); border-radius: 2px; }
 
-  #viewfinder-portrait {
+  #vf-portrait {
     position: relative; width: 100%; aspect-ratio: 4/3;
     background: #0d1a10; border-radius: var(--radius);
-    overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-    touch-action: none; margin-bottom: 16px;
+    overflow: hidden; touch-action: none; margin-bottom: 14px;
+    flex-shrink: 0;
   }
 
-  /* ===== 横向きレイアウト：全画面 ===== */
-  #app-landscape {
+  /* ========== 横向き：完全全画面 ========== */
+  #ui-landscape {
     display: none;
-    position: fixed; inset: 0;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    width: 100dvw; height: 100dvh;
     background: #0d1a10;
     touch-action: none;
+    overflow: hidden;
   }
-  #viewfinder-landscape {
-    position: absolute; inset: 0;
+  #vf-landscape {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
   }
 
-  /* キャンバス共通 */
-  .preview-canvas { width: 100%; height: 100%; display: block; }
-  #canvas-preview { display: none; }
+  /* プレビューキャンバス */
+  .pv-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
+  #canvas-shoot { display: none; }
 
   /* 看板 */
-  .sign-overlay {
+  .sign {
     position: absolute; right: 10px; bottom: 10px;
     background: var(--green-dark); border: 2px solid #fff;
     border-radius: 2px; padding: 3px; pointer-events: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.45);
   }
-  .sign-overlay table { width: 100%; border-collapse: collapse; color: #fff; }
-  .sign-overlay .top-rows td {
-    border: 1px solid #fff; padding: 2px 4px; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; font-family: 'Noto Sans JP', sans-serif;
-  }
-  .sign-overlay .top-rows td:first-child { width: 36%; background: rgba(0,0,0,0.28); font-weight: 500; }
-  .sign-overlay .blank-area {
-    border: 1px solid #fff; border-top: none;
-    background: var(--green-dark);
-    display: flex; align-items: center; justify-content: center; padding: 2px 4px;
-  }
-  .sign-memo { color: #fff; font-family: 'Noto Sans JP', sans-serif; text-align: center; word-break: break-all; line-height: 1.3; }
+  .sign table { width: 100%; border-collapse: collapse; color: #fff; }
+  .sign .sr td { border: 1px solid #fff; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Noto Sans JP', sans-serif; }
+  .sign .sr td:first-child { width: 36%; background: rgba(0,0,0,0.28); font-weight: 500; }
+  .sign .ba { border: 1px solid #fff; border-top: none; background: var(--green-dark); display: flex; align-items: center; justify-content: center; padding: 2px 4px; }
+  .sign .bm { color: #fff; font-family: 'Noto Sans JP', sans-serif; text-align: center; word-break: break-all; line-height: 1.3; }
 
-  /* 縦向き看板サイズ */
-  #sign-portrait { width: 42%; }
-  #sign-portrait .top-rows td { font-size: clamp(7px, 2vw, 11px); height: clamp(16px, 4vw, 24px); }
-  #sign-portrait .blank-area { min-height: clamp(28px, 7vw, 48px); }
-  #sign-portrait .sign-memo { font-size: clamp(7px, 2vw, 11px); }
+  /* 縦向き看板 */
+  #sign-p { width: 42%; }
+  #sign-p .sr td { font-size: clamp(7px,2vw,11px); height: clamp(16px,4vw,24px); }
+  #sign-p .ba { min-height: clamp(26px,7vw,46px); }
+  #sign-p .bm { font-size: clamp(7px,2vw,11px); }
 
-  /* 横向き看板サイズ：画面幅基準で小さめ */
-  #sign-landscape { width: 28%; }
-  #sign-landscape .top-rows td { font-size: clamp(8px, 1.4vw, 13px); height: clamp(18px, 2.8vw, 26px); }
-  #sign-landscape .blank-area { min-height: clamp(32px, 5.5vw, 52px); }
-  #sign-landscape .sign-memo { font-size: clamp(8px, 1.4vw, 13px); }
+  /* 横向き看板：vh基準で小さく */
+  #sign-l { width: clamp(120px, 28vh, 220px); bottom: env(safe-area-inset-bottom, 10px); right: env(safe-area-inset-right, 10px); right: 10px; bottom: 10px; }
+  #sign-l .sr td { font-size: clamp(8px,1.8vh,13px); height: clamp(18px,3.2vh,28px); }
+  #sign-l .ba { min-height: clamp(28px,5.5vh,48px); }
+  #sign-l .bm { font-size: clamp(8px,1.8vh,13px); }
 
   /* ズーム表示 */
-  .zoom-level {
+  .zlv {
     position: absolute; left: 10px; bottom: 10px;
     background: rgba(0,0,0,0.6); color: #fff; font-size: 12px;
     padding: 4px 12px; border-radius: 20px; pointer-events: none;
   }
-  .zoom-hint {
+  .zhint {
     position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
     background: rgba(0,0,0,0.55); color: #fff; font-size: 11px;
-    padding: 3px 12px; border-radius: 20px; pointer-events: none; transition: opacity 1s;
-    white-space: nowrap;
+    padding: 3px 12px; border-radius: 20px; pointer-events: none;
+    white-space: nowrap; transition: opacity 1s;
   }
 
-  /* 横向き撮影ボタン（右端縦並び） */
-  #landscape-controls {
-    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  /* 横向き撮影ボタン群（看板の左） */
+  #ls-btns {
+    position: absolute;
+    right: 10px; top: 50%; transform: translateY(-50%);
     display: flex; flex-direction: column; gap: 10px; align-items: center;
-    z-index: 10;
   }
-  /* 看板と被らないよう右端から少し内側＋下 */
-  #sign-landscape { right: 10px; bottom: 10px; }
-  #landscape-controls { right: calc(28% + 18px); }
+  /* 看板の幅分だけ左にずらす */
+  #ls-btns { right: calc(clamp(120px,28vh,220px) + 18px); }
 
-  .ls-btn {
-    width: 56px; height: 56px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.7);
+  .lbtn {
+    width: clamp(48px,7vh,60px); height: clamp(48px,7vh,60px);
+    border-radius: 50%; border: 2px solid rgba(255,255,255,0.75);
     background: rgba(0,0,0,0.5); color: #fff;
     font-size: 10px; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    transition: background 0.15s, transform 0.1s;
+    transition: transform 0.1s;
   }
-  .ls-btn:active { transform: scale(0.94); }
-  .ls-btn-primary { background: rgba(26,92,42,0.85); border-color: #fff; font-size: 22px; }
-  .ls-btn-save { background: rgba(30,77,140,0.85); }
-  .ls-label { font-size: 10px; }
+  .lbtn:active { transform: scale(0.92); }
+  .lbtn-shoot { background: rgba(26,92,42,0.88); font-size: clamp(18px,3vh,24px); }
+  .lbtn-save  { background: rgba(30,77,140,0.88); }
+  .lbtn-label { font-size: 10px; }
 
-  /* フォーム */
+  /* カメラ不可 */
+  #no-cam {
+    display: none; position: absolute; inset: 0;
+    align-items: center; justify-content: center;
+    color: #7a9e82; font-size: 14px; text-align: center;
+    flex-direction: column; gap: 10px; padding: 1rem;
+  }
+  #no-cam .icon { font-size: 40px; }
+
+  /* フォーム（縦向きのみ） */
   .form-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; border: 1px solid var(--border); }
-  .section-label { font-size: 12px; font-weight: 700; color: var(--green-dark); margin-bottom: 10px; }
-  .field-row { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .field-row:last-child { margin-bottom: 0; }
-  .field-row label { font-size: 13px; font-weight: 500; color: var(--text-sub); }
-  .field-row input, .field-row textarea {
+  .slabel { font-size: 12px; font-weight: 700; color: var(--green-dark); margin-bottom: 10px; }
+  .fr { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .fr:last-child { margin-bottom: 0; }
+  .fr label { font-size: 13px; font-weight: 500; color: var(--text-sub); }
+  .fr input, .fr textarea {
     font-size: 15px; font-family: 'Noto Sans JP', sans-serif;
     padding: 8px 10px; border-radius: 8px;
     border: 1.5px solid var(--border); background: var(--bg);
-    color: var(--text); width: 100%; outline: none; transition: border-color 0.15s;
+    color: var(--text); width: 100%; outline: none;
   }
-  .field-row input { height: 40px; }
-  .field-row textarea { height: 64px; resize: none; line-height: 1.5; }
-  .field-row input:focus, .field-row textarea:focus { border-color: var(--green-dark); background: #fff; }
+  .fr input { height: 40px; }
+  .fr textarea { height: 64px; resize: none; line-height: 1.5; }
+  .fr input:focus, .fr textarea:focus { border-color: var(--green-dark); background: #fff; }
+
   .btn-row { display: flex; gap: 10px; }
   .btn {
     flex: 1; height: 52px; border-radius: var(--radius);
     border: 1.5px solid var(--border); background: var(--card);
     color: var(--text); font-size: 15px; font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 500; cursor: pointer; transition: background 0.15s, transform 0.1s;
+    font-weight: 500; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background 0.15s, transform 0.1s;
   }
   .btn:active { transform: scale(0.97); }
   .btn-primary { background: var(--green-dark); color: #fff; border-color: var(--green-dark); font-size: 17px; }
-  .btn-primary:hover { background: var(--green-mid); }
   .btn-save { background: #1e4d8c; color: #fff; border-color: #1e4d8c; }
+
   #msg { font-size: 13px; color: var(--text-sub); margin-top: 10px; text-align: center; min-height: 18px; }
   #result-area { display: none; margin-bottom: 14px; }
-  #result-area img { width: 100%; border-radius: var(--radius); display: block; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
-  .footer { text-align: center; font-size: 11px; color: #b0afa8; margin-top: 20px; }
-
-  #no-camera-msg {
-    display: none; position: absolute; inset: 0;
-    align-items: center; justify-content: center;
-    color: #7a9e82; font-size: 14px; text-align: center;
-    padding: 1rem; flex-direction: column; gap: 10px;
-  }
-  #no-camera-msg .icon { font-size: 40px; }
+  #result-area img { width: 100%; border-radius: var(--radius); display: block; }
+  .footer { text-align: center; font-size: 11px; color: #b0afa8; margin-top: 16px; }
 </style>
 </head>
 <body>
 
 <!-- 縦向きUI -->
-<div id="app-portrait">
+<div id="ui-portrait">
   <h1>工事写真撮影</h1>
-  <div id="viewfinder-portrait">
-    <canvas id="preview-canvas-p" class="preview-canvas"></canvas>
-    <canvas id="canvas-preview"></canvas>
-    <div id="no-camera-msg">
-      <div class="icon">📷</div>
-      <div>カメラへのアクセスを許可してください<br><small>ブラウザの設定からカメラを許可してください</small></div>
-    </div>
-    <div class="sign-overlay" id="sign-portrait">
-      <table><tbody class="top-rows">
-        <tr><td>工事名</td><td id="s-name-p">　</td></tr>
-        <tr><td>場　所</td><td id="s-place-p">　</td></tr>
-        <tr><td>日　付</td><td id="s-date-p">　</td></tr>
+  <div id="vf-portrait">
+    <canvas id="pvc-p" class="pv-canvas"></canvas>
+    <div id="no-cam"><div class="icon">📷</div><div>カメラへのアクセスを許可してください<br><small>ブラウザの設定からカメラを許可してください</small></div></div>
+    <div class="sign" id="sign-p">
+      <table><tbody class="sr">
+        <tr><td>工事名</td><td id="sn-p">　</td></tr>
+        <tr><td>場　所</td><td id="sp-p">　</td></tr>
+        <tr><td>日　付</td><td id="sd-p">　</td></tr>
       </tbody></table>
-      <div class="blank-area"><div class="sign-memo" id="s-memo-p"></div></div>
+      <div class="ba"><div class="bm" id="sm-p"></div></div>
     </div>
-    <div class="zoom-hint" id="zoom-hint-p">2本指でズーム調整</div>
-    <div class="zoom-level" id="zoom-level-p">🔍 ×1.0</div>
+    <div class="zhint" id="zh-p">2本指でズーム調整</div>
+    <div class="zlv" id="zl-p">🔍 ×1.0</div>
   </div>
-
-  <div id="result-area">
-    <img id="result-img" alt="撮影結果" />
-  </div>
-
+  <div id="result-area"><img id="result-img" /></div>
   <div class="form-card">
-    <div class="section-label">▍看板情報</div>
-    <div class="field-row"><label>工事名</label><input id="f-name" type="text" placeholder="例: ○○新築工事" /></div>
-    <div class="field-row"><label>場所</label><input id="f-place" type="text" placeholder="例: ○○市○○町1-2-3" /></div>
-    <div class="field-row"><label>日付</label><input id="f-date" type="date" /></div>
-    <div class="field-row"><label>空白欄</label><textarea id="f-memo" placeholder="例: 工種・備考など（任意）"></textarea></div>
+    <div class="slabel">▍看板情報</div>
+    <div class="fr"><label>工事名</label><input id="f-name" type="text" placeholder="例: ○○新築工事" /></div>
+    <div class="fr"><label>場所</label><input id="f-place" type="text" placeholder="例: ○○市○○町1-2-3" /></div>
+    <div class="fr"><label>日付</label><input id="f-date" type="date" /></div>
+    <div class="fr"><label>空白欄</label><textarea id="f-memo" placeholder="例: 工種・備考など（任意）"></textarea></div>
   </div>
   <div class="btn-row">
-    <button class="btn btn-primary" id="btn-shoot-p">📷 撮影</button>
-    <button class="btn" id="btn-retake-p" style="display:none">↩ 撮り直し</button>
-    <button class="btn btn-save" id="btn-download-p" style="display:none">💾 保存</button>
+    <button class="btn btn-primary" id="bs-p">📷 撮影</button>
+    <button class="btn" id="br-p" style="display:none">↩ 撮り直し</button>
+    <button class="btn btn-save" id="bd-p" style="display:none">💾 保存</button>
   </div>
   <div id="msg"></div>
   <div class="footer">工事写真撮影アプリ</div>
 </div>
 
-<!-- 横向きUI（全画面） -->
-<div id="app-landscape">
-  <div id="viewfinder-landscape">
-    <canvas id="preview-canvas-l" class="preview-canvas"></canvas>
-    <div class="sign-overlay" id="sign-landscape">
-      <table><tbody class="top-rows">
-        <tr><td>工事名</td><td id="s-name-l">　</td></tr>
-        <tr><td>場　所</td><td id="s-place-l">　</td></tr>
-        <tr><td>日　付</td><td id="s-date-l">　</td></tr>
+<!-- 横向きUI（完全全画面） -->
+<div id="ui-landscape">
+  <div id="vf-landscape">
+    <canvas id="pvc-l" class="pv-canvas"></canvas>
+    <div class="sign" id="sign-l">
+      <table><tbody class="sr">
+        <tr><td>工事名</td><td id="sn-l">　</td></tr>
+        <tr><td>場　所</td><td id="sp-l">　</td></tr>
+        <tr><td>日　付</td><td id="sd-l">　</td></tr>
       </tbody></table>
-      <div class="blank-area"><div class="sign-memo" id="s-memo-l"></div></div>
+      <div class="ba"><div class="bm" id="sm-l"></div></div>
     </div>
-    <div class="zoom-hint" id="zoom-hint-l">2本指でズーム調整</div>
-    <div class="zoom-level" id="zoom-level-l">🔍 ×1.0</div>
-    <div id="landscape-controls">
-      <button class="ls-btn ls-btn-primary" id="btn-shoot-l">📷<span class="ls-label">撮影</span></button>
-      <button class="ls-btn" id="btn-retake-l" style="display:none">↩<span class="ls-label">撮り直し</span></button>
-      <button class="ls-btn ls-btn-save" id="btn-download-l" style="display:none">💾<span class="ls-label">保存</span></button>
+    <div class="zhint" id="zh-l">2本指でズーム調整</div>
+    <div class="zlv" id="zl-l">🔍 ×1.0</div>
+    <div id="ls-btns">
+      <button class="lbtn lbtn-shoot" id="bs-l">📷<span class="lbtn-label">撮影</span></button>
+      <button class="lbtn" id="br-l" style="display:none">↩<span class="lbtn-label">撮り直し</span></button>
+      <button class="lbtn lbtn-save" id="bd-l" style="display:none">💾<span class="lbtn-label">保存</span></button>
     </div>
   </div>
 </div>
 
+<canvas id="canvas-shoot"></canvas>
+
 <script>
-const fName = document.getElementById('f-name');
+const fName  = document.getElementById('f-name');
 const fPlace = document.getElementById('f-place');
-const fDate = document.getElementById('f-date');
-const fMemo = document.getElementById('f-memo');
-const msgEl = document.getElementById('msg');
+const fDate  = document.getElementById('f-date');
+const fMemo  = document.getElementById('f-memo');
+const msgEl  = document.getElementById('msg');
 const resultArea = document.getElementById('result-area');
-const resultImg = document.getElementById('result-img');
-const canvasPreview = document.getElementById('canvas-preview');
+const resultImg  = document.getElementById('result-img');
+const canvasShoot = document.getElementById('canvas-shoot');
 
 fDate.value = new Date().toISOString().split('T')[0];
 
-let videoEl = document.createElement('video');
-videoEl.autoplay = true; videoEl.playsInline = true; videoEl.muted = true;
+const vid = document.createElement('video');
+vid.autoplay = true; vid.playsInline = true; vid.muted = true;
 
 let zoomScale = 1.0;
-let shooting = false;
-let isLandscape = false;
+let shooting  = false;
+let landscape = false;
+let rafId     = null;
 
+/* ---- 看板テキスト更新 ---- */
 function updateSign() {
-  const name = fName.value || '　';
+  const name  = fName.value  || '　';
   const place = fPlace.value || '　';
-  const date = fDate.value ? fDate.value.replace(/-/g, '/') : '　';
-  const memo = fMemo.value || '';
+  const date  = fDate.value  ? fDate.value.replace(/-/g,'/') : '　';
+  const memo  = fMemo.value  || '';
   ['p','l'].forEach(s => {
-    document.getElementById(`s-name-${s}`).textContent = name;
-    document.getElementById(`s-place-${s}`).textContent = place;
-    document.getElementById(`s-date-${s}`).textContent = date;
-    document.getElementById(`s-memo-${s}`).textContent = memo;
+    document.getElementById(`sn-${s}`).textContent = name;
+    document.getElementById(`sp-${s}`).textContent = place;
+    document.getElementById(`sd-${s}`).textContent = date;
+    document.getElementById(`sm-${s}`).textContent = memo;
   });
 }
-[fName, fPlace, fDate, fMemo].forEach(el => el.addEventListener('input', updateSign));
+[fName,fPlace,fDate,fMemo].forEach(el=>el.addEventListener('input',updateSign));
 updateSign();
 
-// レイアウト切替
+/* ---- 向き切替 ---- */
 function applyOrientation() {
-  isLandscape = window.innerWidth > window.innerHeight;
-  document.getElementById('app-portrait').style.display = isLandscape ? 'none' : 'block';
-  document.getElementById('app-landscape').style.display = isLandscape ? 'block' : 'none';
+  landscape = window.innerWidth > window.innerHeight;
+  document.getElementById('ui-portrait').style.display  = landscape ? 'none'  : 'flex';
+  document.getElementById('ui-landscape').style.display = landscape ? 'block' : 'none';
   resizeCanvases();
 }
 
 function resizeCanvases() {
-  const pc = document.getElementById('preview-canvas-p');
-  const rp = document.getElementById('viewfinder-portrait').getBoundingClientRect();
-  pc.width = Math.round(rp.width); pc.height = Math.round(rp.height);
-
-  const lc = document.getElementById('preview-canvas-l');
-  lc.width = window.innerWidth; lc.height = window.innerHeight;
+  // 縦
+  const vfp = document.getElementById('vf-portrait');
+  const cp  = document.getElementById('pvc-p');
+  const rp  = vfp.getBoundingClientRect();
+  cp.width  = Math.round(rp.width);
+  cp.height = Math.round(rp.height);
+  // 横（画面全体）
+  const cl  = document.getElementById('pvc-l');
+  cl.width  = Math.round(window.innerWidth);
+  cl.height = Math.round(window.innerHeight);
 }
 
-function getActiveCanvas() {
-  return isLandscape
-    ? document.getElementById('preview-canvas-l')
-    : document.getElementById('preview-canvas-p');
-}
+window.addEventListener('resize', () => { applyOrientation(); });
 
-function renderPreview() {
+/* ---- プレビューループ ---- */
+function renderLoop() {
   if (shooting) return;
-  requestAnimationFrame(renderPreview);
-  const canvas = getActiveCanvas();
+  rafId = requestAnimationFrame(renderLoop);
+  const canvas = landscape
+    ? document.getElementById('pvc-l')
+    : document.getElementById('pvc-p');
   const ctx = canvas.getContext('2d');
   const cw = canvas.width, ch = canvas.height;
-  const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
+  const vw = vid.videoWidth,  vh = vid.videoHeight;
   if (!vw || !vh) return;
-  ctx.fillStyle = '#0d1a10';
-  ctx.fillRect(0, 0, cw, ch);
+  ctx.fillStyle = '#0d1a10'; ctx.fillRect(0,0,cw,ch);
   const dw = cw * zoomScale, dh = ch * zoomScale;
-  ctx.drawImage(videoEl, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+  ctx.drawImage(vid, (cw-dw)/2, (ch-dh)/2, dw, dh);
 }
 
+/* ---- カメラ起動 ---- */
 async function startCamera() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1440 } },
+      video:{ facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1440} },
       audio: false
     });
-    videoEl.srcObject = stream;
-    await videoEl.play();
-    document.getElementById('no-camera-msg').style.display = 'none';
-    resizeCanvases();
-    renderPreview();
-    setTimeout(() => {
-      document.getElementById('zoom-hint-p').style.opacity = '0';
-      document.getElementById('zoom-hint-l').style.opacity = '0';
-    }, 3000);
+    vid.srcObject = stream;
+    await vid.play();
+    document.getElementById('no-cam').style.display = 'none';
+    applyOrientation();
+    renderLoop();
+    setTimeout(()=>{
+      document.getElementById('zh-p').style.opacity='0';
+      document.getElementById('zh-l').style.opacity='0';
+    },3000);
   } catch(e) {
-    document.getElementById('no-camera-msg').style.display = 'flex';
-    msgEl.textContent = 'カメラが使えません。';
+    document.getElementById('no-cam').style.display='flex';
   }
 }
-
-window.addEventListener('resize', applyOrientation);
 applyOrientation();
 startCamera();
 
-// ピンチズーム（縦・横両対応）
-function addPinch(el, zoomLevelId) {
-  let lastDist = null, lastScale = 1.0;
-  el.addEventListener('touchstart', e => {
-    if (e.touches.length === 2) {
-      lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      lastScale = zoomScale;
+/* ---- ピンチズーム ---- */
+function addPinch(el) {
+  let d0=null, s0=1;
+  el.addEventListener('touchstart', e=>{
+    if(e.touches.length===2){
+      d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      s0=zoomScale;
     }
-  }, { passive: true });
-  el.addEventListener('touchmove', e => {
-    if (e.touches.length === 2 && lastDist) {
-      const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      zoomScale = Math.min(1.5, Math.max(0.35, lastScale * (dist / lastDist)));
-      const d = Math.round((1 / zoomScale) * 10) / 10;
-      document.getElementById(zoomLevelId).textContent = '🔍 ×' + d.toFixed(1);
-      // もう一方も同期
-      ['zoom-level-p','zoom-level-l'].forEach(id => {
-        document.getElementById(id).textContent = '🔍 ×' + d.toFixed(1);
-      });
+  },{passive:true});
+  el.addEventListener('touchmove', e=>{
+    if(e.touches.length===2&&d0){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      zoomScale=Math.min(1.5,Math.max(0.3,s0*(d/d0)));
+      const disp=(Math.round((1/zoomScale)*10)/10).toFixed(1);
+      document.getElementById('zl-p').textContent='🔍 ×'+disp;
+      document.getElementById('zl-l').textContent='🔍 ×'+disp;
     }
-  }, { passive: true });
-  el.addEventListener('touchend', () => { lastDist = null; }, { passive: true });
+  },{passive:true});
+  el.addEventListener('touchend',()=>{d0=null;},{passive:true});
 }
-addPinch(document.getElementById('viewfinder-portrait'), 'zoom-level-p');
-addPinch(document.getElementById('app-landscape'), 'zoom-level-l');
+addPinch(document.getElementById('vf-portrait'));
+addPinch(document.getElementById('ui-landscape'));
 
-// 看板描画
-function drawSign(ctx, canvasW, canvasH) {
-  const signW = canvasW * 0.34;
-  const margin = canvasW * 0.018;
-  const fontSize = Math.max(11, Math.floor(canvasW * 0.016));
-  const rowH = fontSize * 2.3;
-  const topRows = [
-    ['工事名', fName.value || ''],
-    ['場　所', fPlace.value || ''],
-    ['日　付', fDate.value ? fDate.value.replace(/-/g, '/') : ''],
-  ];
-  const blankH = rowH * 2.4;
-  const signH = rowH * topRows.length + blankH + 8;
-  const sx = canvasW - signW - margin;
-  const sy = canvasH - signH - margin;
-  const labelW = signW * 0.36;
-  const lw = Math.max(1, canvasW * 0.001);
-  const ob = Math.max(2, canvasW * 0.003);
+/* ---- 看板描画 ---- */
+function drawSign(ctx, W, H) {
+  const signW = W*0.34, margin=W*0.018;
+  const fs = Math.max(11, Math.floor(W*0.016));
+  const rh = fs*2.3;
+  const rows=[['工事名',fName.value||''],['場　所',fPlace.value||''],['日　付',fDate.value?fDate.value.replace(/-/g,'/'):'']];
+  const blankH=rh*2.4, signH=rh*rows.length+blankH+8;
+  const sx=W-signW-margin, sy=H-signH-margin;
+  const lw=W*0.36, ob=Math.max(2,W*0.003), lnW=Math.max(1,W*0.001);
 
-  ctx.fillStyle = '#1a5c2a'; ctx.fillRect(sx, sy, signW, signH);
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = ob;
-  ctx.strokeRect(sx + ob/2, sy + ob/2, signW - ob, signH - ob);
-  ctx.font = `${fontSize}px 'Noto Sans JP', sans-serif`;
-  ctx.textBaseline = 'middle';
+  ctx.fillStyle='#1a5c2a'; ctx.fillRect(sx,sy,signW,signH);
+  ctx.strokeStyle='#fff'; ctx.lineWidth=ob;
+  ctx.strokeRect(sx+ob/2,sy+ob/2,signW-ob,signH-ob);
+  ctx.font=`${fs}px 'Noto Sans JP',sans-serif`; ctx.textBaseline='middle';
 
-  topRows.forEach((row, i) => {
-    const ry = sy + 4 + rowH * i;
-    if (i > 0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(sx, ry); ctx.lineTo(sx + signW, ry); ctx.stroke(); }
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(sx + labelW, ry); ctx.lineTo(sx + labelW, ry + rowH); ctx.stroke();
-    ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(sx + 1, ry + 1, labelW - 2, rowH - 2);
-    ctx.fillStyle = '#fff'; ctx.fillText(row[0], sx + 5, ry + rowH / 2);
-    const maxW = signW - labelW - 10; let val = row[1];
-    while (val.length > 0 && ctx.measureText(val).width > maxW) val = val.slice(0, -1);
-    ctx.fillText(val, sx + labelW + 6, ry + rowH / 2);
+  rows.forEach((row,i)=>{
+    const ry=sy+4+rh*i;
+    if(i>0){ctx.strokeStyle='#fff';ctx.lineWidth=lnW;ctx.beginPath();ctx.moveTo(sx,ry);ctx.lineTo(sx+signW,ry);ctx.stroke();}
+    ctx.strokeStyle='#fff';ctx.lineWidth=lnW;ctx.beginPath();ctx.moveTo(sx+lw,ry);ctx.lineTo(sx+lw,ry+rh);ctx.stroke();
+    ctx.fillStyle='rgba(0,0,0,0.28)';ctx.fillRect(sx+1,ry+1,lw-2,rh-2);
+    ctx.fillStyle='#fff';ctx.fillText(row[0],sx+5,ry+rh/2);
+    let val=row[1]; const mxW=signW-lw-10;
+    while(val.length>0&&ctx.measureText(val).width>mxW)val=val.slice(0,-1);
+    ctx.fillText(val,sx+lw+6,ry+rh/2);
   });
 
-  const blankTop = sy + 4 + rowH * topRows.length;
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = lw;
-  ctx.beginPath(); ctx.moveTo(sx, blankTop); ctx.lineTo(sx + signW, blankTop); ctx.stroke();
+  const bt=sy+4+rh*rows.length;
+  ctx.strokeStyle='#fff';ctx.lineWidth=lnW;ctx.beginPath();ctx.moveTo(sx,bt);ctx.lineTo(sx+signW,bt);ctx.stroke();
 
-  const memo = fMemo.value.trim();
-  if (memo) {
-    const mf = Math.max(10, Math.floor(fontSize * 0.9));
-    ctx.font = `${mf}px 'Noto Sans JP', sans-serif`; ctx.fillStyle = '#fff'; ctx.textBaseline = 'top';
-    const maxLW = signW - 10; const lines = [];
-    for (const raw of memo.split('\n')) {
-      let line = '';
-      for (const ch of raw) { if (ctx.measureText(line + ch).width > maxLW) { lines.push(line); line = ch; } else line += ch; }
+  const memo=fMemo.value.trim();
+  if(memo){
+    const mf=Math.max(10,Math.floor(fs*0.9));
+    ctx.font=`${mf}px 'Noto Sans JP',sans-serif`;ctx.fillStyle='#fff';ctx.textBaseline='top';
+    const mxLW=signW-10; const lines=[];
+    for(const raw of memo.split('\n')){
+      let line='';
+      for(const ch of raw){if(ctx.measureText(line+ch).width>mxLW){lines.push(line);line=ch;}else line+=ch;}
       lines.push(line);
     }
-    const lh = mf * 1.5; const totalH = lines.length * lh;
-    const startY = blankTop + (blankH - totalH) / 2;
-    lines.forEach((line, i) => ctx.fillText(line, sx + 5, startY + i * lh));
+    const lh=mf*1.5,totalH=lines.length*lh,startY=bt+(blankH-totalH)/2;
+    lines.forEach((line,i)=>ctx.fillText(line,sx+5,startY+i*lh));
   }
 }
 
-function shoot() {
-  shooting = true;
-  const vw = videoEl.videoWidth || 640, vh = videoEl.videoHeight || 480;
-  canvasPreview.width = vw; canvasPreview.height = vh;
-  const ctx = canvasPreview.getContext('2d');
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, vw, vh);
-  const dw = vw * zoomScale, dh = vh * zoomScale;
-  ctx.drawImage(videoEl, (vw - dw) / 2, (vh - dh) / 2, dw, dh);
-  drawSign(ctx, vw, vh);
+/* ---- 撮影 ---- */
+function shoot(){
+  shooting=true;
+  const vw=vid.videoWidth||640, vh=vid.videoHeight||480;
+  canvasShoot.width=vw; canvasShoot.height=vh;
+  const ctx=canvasShoot.getContext('2d');
+  ctx.fillStyle='#000';ctx.fillRect(0,0,vw,vh);
+  const dw=vw*zoomScale,dh=vh*zoomScale;
+  ctx.drawImage(vid,(vw-dw)/2,(vh-dh)/2,dw,dh);
+  drawSign(ctx,vw,vh);
+  const dataUrl=canvasShoot.toDataURL('image/jpeg',0.93);
 
-  const dataUrl = canvasPreview.toDataURL('image/jpeg', 0.93);
-  resultImg.src = dataUrl;
-
-  if (!isLandscape) {
-    resultArea.style.display = 'block';
-    document.getElementById('viewfinder-portrait').style.display = 'none';
-    msgEl.textContent = '撮影完了！「保存」で端末に画像を保存できます';
-    document.getElementById('btn-shoot-p').style.display = 'none';
-    document.getElementById('btn-retake-p').style.display = 'flex';
-    document.getElementById('btn-download-p').style.display = 'flex';
+  if(!landscape){
+    resultImg.src=dataUrl;
+    resultArea.style.display='block';
+    document.getElementById('vf-portrait').style.display='none';
+    msgEl.textContent='撮影完了！「保存」で画像を保存できます';
+    show(['br-p','bd-p']); hide(['bs-p']);
   } else {
-    // 横向きは全画面に結果を表示
-    const lc = document.getElementById('preview-canvas-l');
-    const lctx = lc.getContext('2d');
-    lctx.drawImage(canvasPreview, 0, 0, lc.width, lc.height);
-    document.getElementById('sign-landscape').style.display = 'none';
-    document.getElementById('zoom-level-l').style.display = 'none';
-    document.getElementById('btn-shoot-l').style.display = 'none';
-    document.getElementById('btn-retake-l').style.display = 'flex';
-    document.getElementById('btn-download-l').style.display = 'flex';
+    // 横向き：全画面キャンバスに結果を表示
+    const lc=document.getElementById('pvc-l');
+    const lctx=lc.getContext('2d');
+    lctx.drawImage(canvasShoot,0,0,lc.width,lc.height);
+    hide(['sign-l','zl-l','bs-l']);
+    show(['br-l','bd-l']);
   }
 
-  const dl = () => {
-    const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
-    const a = document.createElement('a');
-    a.download = `koujishashin_${ts}.jpg`; a.href = dataUrl; a.click();
+  const dl=()=>{
+    const ts=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    const a=document.createElement('a');
+    a.download=`koujishashin_${ts}.jpg`; a.href=dataUrl; a.click();
   };
-  document.getElementById('btn-download-p').onclick = dl;
-  document.getElementById('btn-download-l').onclick = dl;
+  document.getElementById('bd-p').onclick=dl;
+  document.getElementById('bd-l').onclick=dl;
 }
 
-function retake() {
-  shooting = false;
-  resultArea.style.display = 'none';
-  document.getElementById('viewfinder-portrait').style.display = 'block';
-  document.getElementById('sign-landscape').style.display = 'block';
-  document.getElementById('zoom-level-l').style.display = 'block';
-  msgEl.textContent = ''; resultImg.src = '';
-  renderPreview();
-  ['btn-shoot-p','btn-shoot-l'].forEach(id => document.getElementById(id).style.display = 'flex');
-  ['btn-retake-p','btn-download-p','btn-retake-l','btn-download-l'].forEach(id => document.getElementById(id).style.display = 'none');
+/* ---- 撮り直し ---- */
+function retake(){
+  shooting=false;
+  resultArea.style.display='none';
+  resultImg.src='';
+  document.getElementById('vf-portrait').style.display='block';
+  show(['sign-l','zl-l','bs-p','bs-l']);
+  hide(['br-p','bd-p','br-l','bd-l']);
+  msgEl.textContent='';
+  renderLoop();
 }
 
-document.getElementById('btn-shoot-p').addEventListener('click', shoot);
-document.getElementById('btn-shoot-l').addEventListener('click', shoot);
-document.getElementById('btn-retake-p').addEventListener('click', retake);
-document.getElementById('btn-retake-l').addEventListener('click', retake);
+function show(ids){ids.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='flex';});}
+function hide(ids){ids.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});}
+
+document.getElementById('bs-p').addEventListener('click',shoot);
+document.getElementById('bs-l').addEventListener('click',shoot);
+document.getElementById('br-p').addEventListener('click',retake);
+document.getElementById('br-l').addEventListener('click',retake);
 </script>
 </body>
 </html>
